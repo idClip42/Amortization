@@ -73,7 +73,8 @@ function runThing(includeLumpSums, extraMonthlyAmount) {
     );
 }
 
-runThing(false, 0);
+if (config.graphs.includeRaw30Year) runThing(false, 0);
+
 for (const extraMonthly of config.extraPayments.extraMonthlyOptions) {
     runThing(true, extraMonthly);
 }
@@ -87,7 +88,7 @@ const flatData = graphData.flatMap(series =>
     }))
 );
 
-function makeLineChartSpec({ data, yField, yTitle, targetValue }) {
+function makeLineChartSpec({ data, yField, yTitle }) {
     return {
         $schema: "https://vega.github.io/schema/vega-lite/v5.json",
         width: 800,
@@ -99,6 +100,10 @@ function makeLineChartSpec({ data, yField, yTitle, targetValue }) {
                 field: "date",
                 type: "temporal",
                 title: "Date",
+                axis: {
+                    format: "%Y-%m",
+                    tickCount: { interval: "month" },
+                },
             },
             color: {
                 field: "label",
@@ -140,7 +145,25 @@ const principalSpec = makeLineChartSpec({
     data: flatData,
     yField: "remainingPrincipal",
     yTitle: "Remaining Principal ($)",
-    targetValue: config.target.principal,
+});
+principalSpec.layer.push({
+    mark: {
+        type: "rule",
+        color: "red",
+        strokeDash: [6, 6],
+    },
+    encoding: {
+        y: { datum: config.target.principal },
+        x: {
+            aggregate: "min",
+            field: "date",
+            type: "temporal",
+        },
+        x2: {
+            aggregate: "max",
+            field: "date",
+        },
+    },
 });
 
 await renderSvg(principalSpec, "./output/remaining_principal.svg");
@@ -150,7 +173,6 @@ const interestSpec = makeLineChartSpec({
     data: flatData,
     yField: "interestPaid",
     yTitle: "Total Interest Paid ($)",
-    targetValue: config.target.principal,
 });
 
 await renderSvg(interestSpec, "./output/total_interest_paid.svg");
