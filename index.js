@@ -6,21 +6,24 @@ import config from "./config.json" with { type: "json" };
 const monthlyTowardsLoan = config.loan.monthlyPayment - config.loan.monthlyEscrow;
 const monthlyInterestRate = config.loan.interest / 12 / 100;
 
+const graphData = [];
+
 function runThing(includeLumpSums, extraMonthlyAmount) {
     let currentYear = config.loan.startYear;
     let currentMonth = config.loan.startMonth;
     let interestPaid = 0;
     let remainingPrincipal = config.loan.principal;
     let belowTarget = false;
+    const thisData = {
+        extraMonthlyAmount: extraMonthlyAmount,
+        points: []
+    };
+    graphData.push(thisData);
 
     while (remainingPrincipal > 0) {
         const thisMonthsInterest = remainingPrincipal * monthlyInterestRate;
         const thisMonthsScheduledPrincipal = monthlyTowardsLoan - thisMonthsInterest;
         remainingPrincipal -= thisMonthsScheduledPrincipal;
-
-        // console.log(
-        //     `[${extraMonthlyAmount}] ${currentYear}/${currentMonth}: P=\$${thisMonthsScheduledPrincipal.toFixed(2)}, I=\$${thisMonthsInterest.toFixed(2)}, R=\$${remainingPrincipal.toFixed(2)}.`,
-        // );
 
         if (includeLumpSums) {
             const lumpSum = config.extraPayments.lumpSums.find(
@@ -28,9 +31,6 @@ function runThing(includeLumpSums, extraMonthlyAmount) {
             );
             if (lumpSum) {
                 remainingPrincipal -= lumpSum[2];
-                // console.log(
-                //     `[${extraMonthlyAmount}] Lump Sum: \$${lumpSum[2].toFixed(2)}, R=\$${remainingPrincipal.toFixed(2)}.`,
-                // );
             }
 
             if (
@@ -39,24 +39,29 @@ function runThing(includeLumpSums, extraMonthlyAmount) {
                     currentMonth >= config.extraPayments.extraMonthlyStart[1])
             ) {
                 remainingPrincipal -= extraMonthlyAmount;
-                // console.log(
-                //     `[${extraMonthlyAmount}] Extra Monthly: \$${extraMonthlyAmount.toFixed(2)}, R=\$${remainingPrincipal.toFixed(2)}.`,
-                // );
             }
         }
 
         interestPaid += thisMonthsInterest;
-        currentMonth++;
-        if (currentMonth > 12) {
-            currentYear++;
-            currentMonth -= 12;
-        }
+
+        thisData.points.push({
+            year: currentYear,
+            month: currentMonth,
+            remainingPrincipal: remainingPrincipal,
+            interestPaid: interestPaid
+        });
 
         if (remainingPrincipal < config.target.principal && !belowTarget) {
             belowTarget = true;
             console.log(
                 `[${extraMonthlyAmount}] [${includeLumpSums ? "x" : " "}] Principal is below \$${config.target.principal.toFixed(2)} in ${currentYear}/${currentMonth}. Total Interest Paid: \$${interestPaid.toFixed(2)}.`,
             );
+        }
+
+        currentMonth++;
+        if (currentMonth > 12) {
+            currentYear++;
+            currentMonth -= 12;
         }
     }
 
