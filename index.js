@@ -31,7 +31,7 @@ function runThing(includeLumpSums, extraMonthlyAmount) {
 
     while (remainingPrincipal > 0) {
         const thisMonthsInterest = remainingPrincipal * (monthlyInterest / 100);
-        const thisMonthsScheduledPrincipal = MONTHLY - thisMonthsInterest;
+        const thisMonthsScheduledPrincipal = monthlyTowardsLoan - thisMonthsInterest;
         remainingPrincipal -= thisMonthsScheduledPrincipal;
 
         // console.log(
