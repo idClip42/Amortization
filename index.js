@@ -3,7 +3,8 @@
 
 import config from "./config.json" with { type: "json" };
 
-const monthlyTowardsLoan = config.loan.monthlyPayment - config.loan.monthlyEscrow;
+const monthlyTowardsLoan =
+    config.loan.monthlyPayment - config.loan.monthlyEscrow;
 const monthlyInterestRate = config.loan.interest / 12 / 100;
 
 const graphData = [];
@@ -16,18 +17,19 @@ function runThing(includeLumpSums, extraMonthlyAmount) {
     let belowTarget = false;
     const thisData = {
         extraMonthlyAmount: extraMonthlyAmount,
-        points: []
+        points: [],
     };
     graphData.push(thisData);
 
     while (remainingPrincipal > 0) {
         const thisMonthsInterest = remainingPrincipal * monthlyInterestRate;
-        const thisMonthsScheduledPrincipal = monthlyTowardsLoan - thisMonthsInterest;
+        const thisMonthsScheduledPrincipal =
+            monthlyTowardsLoan - thisMonthsInterest;
         remainingPrincipal -= thisMonthsScheduledPrincipal;
 
         if (includeLumpSums) {
             const lumpSum = config.extraPayments.lumpSums.find(
-                t => t[0] === currentYear && t[1] === currentMonth,
+                t => t[0] === currentYear && t[1] === currentMonth
             );
             if (lumpSum) {
                 remainingPrincipal -= lumpSum[2];
@@ -48,13 +50,13 @@ function runThing(includeLumpSums, extraMonthlyAmount) {
             year: currentYear,
             month: currentMonth,
             remainingPrincipal: remainingPrincipal,
-            interestPaid: interestPaid
+            interestPaid: interestPaid,
         });
 
         if (remainingPrincipal < config.target.principal && !belowTarget) {
             belowTarget = true;
             console.log(
-                `[${extraMonthlyAmount}] [${includeLumpSums ? "x" : " "}] Principal is below \$${config.target.principal.toFixed(2)} in ${currentYear}/${currentMonth}. Total Interest Paid: \$${interestPaid.toFixed(2)}.`,
+                `[${extraMonthlyAmount}] [${includeLumpSums ? "x" : " "}] Principal is below \$${config.target.principal.toFixed(2)} in ${currentYear}/${currentMonth}. Total Interest Paid: \$${interestPaid.toFixed(2)}.`
             );
         }
 
@@ -66,7 +68,7 @@ function runThing(includeLumpSums, extraMonthlyAmount) {
     }
 
     console.log(
-        `[${extraMonthlyAmount}] [${includeLumpSums ? "x" : " "}] Principal is $0 in ${currentYear}/${currentMonth}. Total Interest Paid: \$${interestPaid.toFixed(2)}.`,
+        `[${extraMonthlyAmount}] [${includeLumpSums ? "x" : " "}] Principal is $0 in ${currentYear}/${currentMonth}. Total Interest Paid: \$${interestPaid.toFixed(2)}.`
     );
 }
 
