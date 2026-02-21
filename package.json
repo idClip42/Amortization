@@ -7,5 +7,9 @@
         "start": "node index.js"
     },
     "author": "",
-    "license": "ISC"
+    "license": "ISC",
+    "dependencies": {
+        "vega": "^6.2.0",
+        "vega-lite": "^6.4.2"
+    }
 }

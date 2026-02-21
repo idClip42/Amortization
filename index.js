@@ -1,7 +1,7 @@
-// TODO: Generate a graph of balance over time, with multiple lines for multiple monthly extras.
-// TODO: What other graphs can we generate... total interest paid over time?
-
 import config from "./config.json" with { type: "json" };
+import fs from "fs/promises";
+import { compile } from "vega-lite";
+import { parse, View } from "vega";
 
 const monthlyTowardsLoan =
     config.loan.monthlyPayment - config.loan.monthlyEscrow;
@@ -16,6 +16,7 @@ function runThing(includeLumpSums, extraMonthlyAmount) {
     let remainingPrincipal = config.loan.principal;
     let belowTarget = false;
     const thisData = {
+        includeLumpSums: includeLumpSums,
         extraMonthlyAmount: extraMonthlyAmount,
         points: [],
     };
@@ -76,3 +77,79 @@ runThing(false, 0);
 for (const extraMonthly of config.extraPayments.extraMonthlyOptions) {
     runThing(true, extraMonthly);
 }
+
+const flatData = graphData.flatMap(series =>
+    series.points.map(p => ({
+        date: new Date(p.year, p.month - 1, 1),
+        remainingPrincipal: p.remainingPrincipal,
+        interestPaid: p.interestPaid,
+        label: series.includeLumpSums ? series.extraMonthlyAmount : "30 Year",
+    }))
+);
+
+function makeLineChartSpec({ data, yField, yTitle, targetValue }) {
+    return {
+        $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+        width: 800,
+        height: 400,
+        data: { values: data },
+
+        encoding: {
+            x: {
+                field: "date",
+                type: "temporal",
+                title: "Date",
+            },
+            color: {
+                field: "label",
+                type: "nominal",
+                title: "Extra Monthly Payment ($)",
+            },
+        },
+
+        layer: [
+            {
+                mark: { type: "line" },
+                encoding: {
+                    y: {
+                        field: yField,
+                        type: "quantitative",
+                        title: yTitle,
+                    },
+                },
+            },
+        ],
+    };
+}
+
+async function renderSvg(spec, outputPath) {
+    const { spec: vegaSpec } = compile(spec);
+    const view = new View(parse(vegaSpec), {
+        renderer: "svg",
+    });
+
+    const svg = await view.toSVG();
+    await fs.writeFile(outputPath, svg);
+}
+
+await fs.mkdir("./output", { recursive: true });
+
+// Graph 1: Remaining principal
+const principalSpec = makeLineChartSpec({
+    data: flatData,
+    yField: "remainingPrincipal",
+    yTitle: "Remaining Principal ($)",
+    targetValue: config.target.principal,
+});
+
+await renderSvg(principalSpec, "./output/remaining_principal.svg");
+
+// Graph 2: Total interest paid
+const interestSpec = makeLineChartSpec({
+    data: flatData,
+    yField: "interestPaid",
+    yTitle: "Total Interest Paid ($)",
+    targetValue: config.target.principal,
+});
+
+await renderSvg(interestSpec, "./output/total_interest_paid.svg");
