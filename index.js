@@ -19,7 +19,7 @@ function runThing(includeLumpSums, extraMonthlyAmount) {
         remainingPrincipal -= thisMonthsScheduledPrincipal;
 
         // console.log(
-        //     `[${extraMonthly}] ${currentYear}/${currentMonth}: P=\$${thisMonthsPrincipal.toFixed(2)}, I=\$${thisMonthsInterest.toFixed(2)}, R=\$${remainingPrincipal.toFixed(2)}.`,
+        //     `[${extraMonthlyAmount}] ${currentYear}/${currentMonth}: P=\$${thisMonthsScheduledPrincipal.toFixed(2)}, I=\$${thisMonthsInterest.toFixed(2)}, R=\$${remainingPrincipal.toFixed(2)}.`,
         // );
 
         if (includeLumpSums) {
@@ -29,7 +29,7 @@ function runThing(includeLumpSums, extraMonthlyAmount) {
             if (lumpSum) {
                 remainingPrincipal -= lumpSum[2];
                 // console.log(
-                //     `[${extraMonthly}] Lump Sum: \$${lumpSum[2].toFixed(2)}, R=\$${remainingPrincipal.toFixed(2)}.`,
+                //     `[${extraMonthlyAmount}] Lump Sum: \$${lumpSum[2].toFixed(2)}, R=\$${remainingPrincipal.toFixed(2)}.`,
                 // );
             }
 
@@ -40,7 +40,7 @@ function runThing(includeLumpSums, extraMonthlyAmount) {
             ) {
                 remainingPrincipal -= extraMonthlyAmount;
                 // console.log(
-                //     `[${extraMonthly}] Extra Monthly: \$${extraMonthly.toFixed(2)}, R=\$${remainingPrincipal.toFixed(2)}.`,
+                //     `[${extraMonthlyAmount}] Extra Monthly: \$${extraMonthlyAmount.toFixed(2)}, R=\$${remainingPrincipal.toFixed(2)}.`,
                 // );
             }
         }
