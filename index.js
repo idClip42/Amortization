@@ -115,6 +115,7 @@ function makeLineChartSpec({ data, yField, yTitle, targetValue }) {
                         field: yField,
                         type: "quantitative",
                         title: yTitle,
+                        scale: { domainMin: 0 },
                     },
                 },
             },
