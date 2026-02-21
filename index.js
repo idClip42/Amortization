@@ -102,7 +102,7 @@ function makeLineChartSpec({ data, yField, yTitle }) {
                 title: "Date",
                 axis: {
                     format: "%Y-%m",
-                    tickCount: { interval: "month" },
+                    tickCount: {},
                 },
             },
             color: {

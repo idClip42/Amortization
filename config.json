@@ -16,7 +16,7 @@
             [2026, 2, 6000]
         ],
         "extraMonthlyStart": [2026, 3],
-        "extraMonthlyOptions": [3000, 3500, 4000, 4500]
+        "extraMonthlyOptions": [2500, 3000, 3500, 4000, 4500]
     },
     "target": {
         "principal": 20000
