@@ -2,6 +2,7 @@ import config from "./config.json" with { type: "json" };
 import fs from "fs/promises";
 import { compile } from "vega-lite";
 import { parse, View } from "vega";
+import { makeLineChartSpec } from "./src/makeLineChartSpec.js";
 
 // TODO: What about an adjusted-dollars version?
 // TODO: What about an "amount paid off" version?
@@ -93,46 +94,6 @@ const flatData = graphData.flatMap(series =>
         label: series.includeLumpSums ? series.extraMonthlyAmount : "30 Year",
     }))
 );
-
-function makeLineChartSpec({ data, yField, yTitle }) {
-    return {
-        $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-        width: 800,
-        height: 400,
-        data: { values: data },
-
-        encoding: {
-            x: {
-                field: "date",
-                type: "temporal",
-                title: "Date",
-                axis: {
-                    format: "%Y-%m",
-                    tickCount: {},
-                },
-            },
-            color: {
-                field: "label",
-                type: "nominal",
-                title: "Extra Monthly Payment ($)",
-            },
-        },
-
-        layer: [
-            {
-                mark: { type: "line" },
-                encoding: {
-                    y: {
-                        field: yField,
-                        type: "quantitative",
-                        title: yTitle,
-                        scale: { domainMin: 0 },
-                    },
-                },
-            },
-        ],
-    };
-}
 
 async function renderSvg(spec, outputPath) {
     const { spec: vegaSpec } = compile(spec);
