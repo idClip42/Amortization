@@ -23,24 +23,20 @@ if (config.graphs.includeRaw30Year) {
 
 for (const extraMonthly of config.extraPayments.extraMonthlyOptions) {
     graphData.push(
-        run(
-            extraMonthly, // TODO: What happens if this is a string starting with a dollar sign?
-            config.loan,
-            {
-                lumpSums: config.extraPayments.lumpSums.map(ls => ({
-                    year: ls[0],
-                    month: ls[1],
-                    amount: ls[2],
-                })),
-                monthly: {
-                    start: {
-                        year: config.extraPayments.extraMonthlyStart[0],
-                        month: config.extraPayments.extraMonthlyStart[1],
-                    },
-                    amount: extraMonthly,
+        run(extraMonthly, config.loan, {
+            lumpSums: config.extraPayments.lumpSums.map(ls => ({
+                year: ls[0],
+                month: ls[1],
+                amount: ls[2],
+            })),
+            monthly: {
+                start: {
+                    year: config.extraPayments.extraMonthlyStart[0],
+                    month: config.extraPayments.extraMonthlyStart[1],
                 },
-            }
-        )
+                amount: extraMonthly,
+            },
+        })
     );
 }
 
