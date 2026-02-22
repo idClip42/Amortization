@@ -5,7 +5,6 @@ import { renderGraphs } from "./src/render.js";
 
 // TODO: What about an adjusted-dollars version?
 // TODO: Graphs per payoff-option that show everything on one graph?
-// TODO: Break out into separate files?
 
 const graphData: GraphPointData[][] = [];
 
