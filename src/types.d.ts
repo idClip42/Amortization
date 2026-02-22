@@ -1,7 +1,8 @@
 import type Config from "./../config.json";
 
-type YearMonth = {
+export type YearMonth = {
     year: number;
+    /** 1 is January, 12 is December */
     month: number;
 };
 

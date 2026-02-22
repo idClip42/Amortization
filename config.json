@@ -25,5 +25,8 @@
     },
     "graphs": {
         "includeRaw30Year": true
+    },
+    "inflation": {
+        "estimatedRate": 2.5
     }
 }
