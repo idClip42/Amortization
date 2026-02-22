@@ -14,7 +14,7 @@ export function makeLineChartSpec({
     yTitle,
     horizRule,
 }: Input): Parameters<typeof compile>[0] {
-    return {
+    const result: Parameters<typeof compile>[0] = {
         $schema: "https://vega.github.io/schema/vega-lite/v5.json",
         width: 800,
         height: 400,
@@ -49,7 +49,6 @@ export function makeLineChartSpec({
                 },
             },
             {
-                // TODO: Make optional
                 mark: {
                     type: "rule",
                     color: "red",
@@ -70,4 +69,8 @@ export function makeLineChartSpec({
             },
         ],
     };
+
+    if (!horizRule) result.layer.splice(1, 1);
+
+    return result;
 }
