@@ -5,7 +5,6 @@ import { parse, View } from "vega";
 import { makeLineChartSpec } from "./src/makeLineChartSpec.js";
 
 // TODO: What about an adjusted-dollars version?
-// TODO: What about an "amount paid off" version?
 // TODO: Graphs per payoff-option that show everything on one graph?
 // TODO: Break out into separate files?
 // TODO: Types?
@@ -90,7 +89,10 @@ const flatData = graphData.flatMap(series =>
     series.points.map(p => ({
         date: new Date(p.year, p.month - 1, 1),
         remainingPrincipal: p.remainingPrincipal,
+        principalPaid: config.loan.principal - p.remainingPrincipal,
         interestPaid: p.interestPaid,
+        totalPaid:
+            config.loan.principal - p.remainingPrincipal + p.interestPaid,
         label: series.includeLumpSums ? series.extraMonthlyAmount : "30 Year",
     }))
 );
@@ -108,12 +110,12 @@ async function renderSvg(spec, outputPath) {
 await fs.mkdir("./output", { recursive: true });
 
 // Graph 1: Remaining principal
-const principalSpec = makeLineChartSpec({
+const principalRemainingSpec = makeLineChartSpec({
     data: flatData,
     yField: "remainingPrincipal",
     yTitle: "Remaining Principal ($)",
 });
-principalSpec.layer.push({
+principalRemainingSpec.layer.push({
     mark: {
         type: "rule",
         color: "red",
@@ -132,14 +134,25 @@ principalSpec.layer.push({
         },
     },
 });
+await renderSvg(principalRemainingSpec, "./output/principal_remaining.svg");
 
-await renderSvg(principalSpec, "./output/remaining_principal.svg");
-
-// Graph 2: Total interest paid
 const interestSpec = makeLineChartSpec({
     data: flatData,
     yField: "interestPaid",
     yTitle: "Total Interest Paid ($)",
 });
+await renderSvg(interestSpec, "./output/interest_paid.svg");
 
-await renderSvg(interestSpec, "./output/total_interest_paid.svg");
+const principalPaidSpec = makeLineChartSpec({
+    data: flatData,
+    yField: "principalPaid",
+    yTitle: "Principal Paid ($)",
+});
+await renderSvg(principalPaidSpec, "./output/principal_paid.svg");
+
+const totalPaidSpec = makeLineChartSpec({
+    data: flatData,
+    yField: "totalPaid",
+    yTitle: "Total Paid ($)",
+});
+await renderSvg(totalPaidSpec, "./output/total_paid.svg");
