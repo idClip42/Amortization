@@ -3,6 +3,8 @@ import fs from "fs/promises";
 import { compile } from "vega-lite";
 import { parse, View } from "vega";
 
+// TODO: What about an adjusted-dollars-version?
+
 const monthlyTowardsLoan =
     config.loan.monthlyPayment - config.loan.monthlyEscrow;
 const monthlyInterestRate = config.loan.interest / 12 / 100;
