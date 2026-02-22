@@ -1,4 +1,5 @@
 import type Config from "./../config.json";
+import { calculateMonth } from "./calcMonth.js";
 import type { ExtraPayments, GraphPointData, LoanState } from "./types.js";
 
 export function run(
@@ -12,31 +13,15 @@ export function run(
         remainingPrincipal: loan.principal,
         interestPaid: 0,
     };
-    const monthlyTowardsLoan = loan.monthlyPayment - loan.monthlyEscrow;
-    const monthlyInterestRate = loan.interest / 12 / 100;
     const graphData: GraphPointData[] = [];
 
     while (state.remainingPrincipal > 0) {
-        const thisMonthsInterest =
-            state.remainingPrincipal * monthlyInterestRate;
-        state.interestPaid += thisMonthsInterest;
-
-        const thisMonthsScheduledPrincipal =
-            monthlyTowardsLoan - thisMonthsInterest;
-        state.remainingPrincipal -= thisMonthsScheduledPrincipal;
-
-        const lumpSum =
-            extra.lumpSums.find(
-                test => test.year === state.year && test.month === state.month
-            )?.amount || 0;
-        state.remainingPrincipal -= lumpSum;
-
-        if (
-            state.year > extra.monthly.start.year ||
-            (state.year === extra.monthly.start.year &&
-                state.month >= extra.monthly.start.month)
-        )
-            state.remainingPrincipal -= extra.monthly.amount;
+        state = calculateMonth(
+            state,
+            loan.monthlyPayment - loan.monthlyEscrow,
+            loan.interest / 12 / 100,
+            extra
+        );
 
         graphData.push({
             label: label,
