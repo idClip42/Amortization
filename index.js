@@ -3,7 +3,11 @@ import fs from "fs/promises";
 import { compile } from "vega-lite";
 import { parse, View } from "vega";
 
-// TODO: What about an adjusted-dollars-version?
+// TODO: What about an adjusted-dollars version?
+// TODO: What about an "amount paid off" version?
+// TODO: Graphs per payoff-option that show everything on one graph?
+// TODO: Break out into separate files?
+// TODO: Types?
 
 const monthlyTowardsLoan =
     config.loan.monthlyPayment - config.loan.monthlyEscrow;
