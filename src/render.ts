@@ -27,6 +27,8 @@ export function renderGraphs(
         .then(() => {
             const renderPromises = [];
 
+            // REMAINING PRINCIPAL
+
             const principalRemainingSpec = makeLineChartSpec({
                 data: data,
                 yField: "remainingPrincipal",
@@ -39,6 +41,8 @@ export function renderGraphs(
                     "./output/principal_remaining.svg"
                 )
             );
+
+            // AMOUNT PAID
 
             const interestSpec = makeLineChartSpec({
                 data: data,
@@ -66,6 +70,43 @@ export function renderGraphs(
             renderPromises.push(
                 renderSvg(totalPaidSpec, "./output/total_paid.svg")
             );
+
+            // AMOUNT PAID (ADJUSTED)
+
+            const interestAdjSpec = makeLineChartSpec({
+                data: data,
+                yField: "interestPaidAdjusted",
+                yTitle: `Total Interest Paid (${inflationDate.getFullYear()}$)`,
+            });
+            renderPromises.push(
+                renderSvg(
+                    interestAdjSpec,
+                    "./output/adjusted_interest_paid.svg"
+                )
+            );
+
+            const principalPaidAdjSpec = makeLineChartSpec({
+                data: data,
+                yField: "principalPaidAdjusted",
+                yTitle: `Principal Paid (${inflationDate.getFullYear()}$)`,
+            });
+            renderPromises.push(
+                renderSvg(
+                    principalPaidAdjSpec,
+                    "./output/adjusted_principal_paid.svg"
+                )
+            );
+
+            const totalPaidAdjSpec = makeLineChartSpec({
+                data: data,
+                yField: "totalPaidAdjusted",
+                yTitle: `Total Paid (${inflationDate.getFullYear()}$)`,
+            });
+            renderPromises.push(
+                renderSvg(totalPaidAdjSpec, "./output/adjusted_total_paid.svg")
+            );
+
+            // WAIT FOR ALL
 
             return Promise.all(renderPromises);
         })

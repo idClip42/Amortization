@@ -3,7 +3,6 @@ import type { GraphPointData } from "./src/types.d.ts";
 import { run } from "./src/run.js";
 import { renderGraphs } from "./src/render.js";
 
-// TODO: What about an adjusted-dollars version?
 // TODO: Graphs per payoff-option that show everything on one graph?
 
 const currentDate = new Date();

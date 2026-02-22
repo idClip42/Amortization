@@ -27,8 +27,12 @@ export function run(
             date: new Date(state.year, state.month - 1, 1),
             remainingPrincipal: loan.principal - state.principalPaid,
             principalPaid: state.principalPaid,
+            principalPaidAdjusted: state.principalPaidAdjusted,
             interestPaid: state.interestPaid,
+            interestPaidAdjusted: state.interestPaidAdjusted,
             totalPaid: state.principalPaid + state.interestPaid,
+            totalPaidAdjusted:
+                state.principalPaidAdjusted + state.interestPaidAdjusted,
         });
 
         state.month++;

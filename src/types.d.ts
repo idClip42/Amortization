@@ -24,6 +24,9 @@ export type GraphPointData = {
     date: Date;
     remainingPrincipal: number;
     principalPaid: number;
+    principalPaidAdjusted: number;
     interestPaid: number;
+    interestPaidAdjusted: number;
     totalPaid: number;
+    totalPaidAdjusted: number;
 };

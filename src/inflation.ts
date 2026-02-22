@@ -45,7 +45,7 @@ function getCpi({ year, month }: YearMonth): number {
     }
 
     // If the year is after our data set, we calculate an estimate.
-    const estimatedAnnualRate = config.inflation.estimatedRate;
+    const estimatedAnnualRate = config.inflation.estimatedRatePercentage / 100;
     const monthsDelta = (year - latest.year) * 12 + (month - latest.month);
     return (
         Number(latestCpi) * Math.pow(1 + estimatedAnnualRate, monthsDelta / 12)
