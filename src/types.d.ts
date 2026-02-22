@@ -1,11 +1,14 @@
+import type Config from "./../config.json";
+
 type YearMonth = {
     year: number;
     month: number;
 };
 
 export type LoanState = YearMonth & {
-    remainingPrincipal: number;
+    principalPaid: number;
     interestPaid: number;
+    loan: Readonly<(typeof Config)["loan"]>;
 };
 
 export type ExtraPayments = {

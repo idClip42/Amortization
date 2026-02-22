@@ -10,27 +10,22 @@ export function run(
     let state: LoanState = {
         year: loan.startYear,
         month: loan.startMonth,
-        remainingPrincipal: loan.principal,
+        principalPaid: 0,
         interestPaid: 0,
+        loan: loan,
     };
     const graphData: GraphPointData[] = [];
 
-    while (state.remainingPrincipal > 0) {
-        state = calculateMonth(
-            state,
-            loan.monthlyPayment - loan.monthlyEscrow,
-            loan.interest / 12 / 100,
-            extra
-        );
+    while (state.principalPaid < loan.principal) {
+        state = calculateMonth(state, extra);
 
         graphData.push({
             label: label,
             date: new Date(state.year, state.month - 1, 1),
-            remainingPrincipal: state.remainingPrincipal,
-            principalPaid: loan.principal - state.remainingPrincipal,
+            remainingPrincipal: loan.principal - state.principalPaid,
+            principalPaid: state.principalPaid,
             interestPaid: state.interestPaid,
-            totalPaid:
-                loan.principal - state.remainingPrincipal + state.interestPaid,
+            totalPaid: state.principalPaid + state.interestPaid,
         });
 
         state.month++;

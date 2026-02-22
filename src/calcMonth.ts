@@ -1,34 +1,37 @@
 import type { LoanState, ExtraPayments } from "./types.js";
 
 export function calculateMonth(
-    { year, month, remainingPrincipal, interestPaid }: LoanState,
-    monthlyTowardsLoan: number,
-    monthlyInterestRate: number,
+    { year, month, principalPaid, interestPaid, loan }: LoanState,
     extra: ExtraPayments
 ): LoanState {
+    const monthlyTowardsLoan = loan.monthlyPayment - loan.monthlyEscrow;
+    const monthlyInterestRate = loan.interest / 12 / 100;
+
+    const remainingPrincipal = loan.principal - principalPaid;
     const thisMonthsInterest = remainingPrincipal * monthlyInterestRate;
     interestPaid += thisMonthsInterest;
 
     const thisMonthsScheduledPrincipal =
         monthlyTowardsLoan - thisMonthsInterest;
-    remainingPrincipal -= thisMonthsScheduledPrincipal;
+    principalPaid += thisMonthsScheduledPrincipal;
 
     const lumpSum =
         extra.lumpSums.find(test => test.year === year && test.month === month)
             ?.amount || 0;
-    remainingPrincipal -= lumpSum;
+    principalPaid += lumpSum;
 
     if (
         year > extra.monthly.start.year ||
         (year === extra.monthly.start.year &&
             month >= extra.monthly.start.month)
     )
-        remainingPrincipal -= extra.monthly.amount;
+        principalPaid += extra.monthly.amount;
 
     return {
         year,
         month,
-        remainingPrincipal,
+        principalPaid,
         interestPaid,
+        loan,
     };
 }
