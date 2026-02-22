@@ -11,7 +11,7 @@ const graphData: GraphPointData[][] = [];
 
 if (config.graphs.includeRaw30Year) {
     graphData.push(
-        run("30 Year", config.loan, {
+        run("No Extra Payments", config.loan, {
             lumpSums: [],
             monthly: { start: { year: 0, month: 0 }, amount: 0 },
         })
