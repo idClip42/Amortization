@@ -3,7 +3,11 @@ import fs from "fs/promises";
 import { compile } from "vega-lite";
 import { parse, View } from "vega";
 import { makeLineChartSpec } from "./src/makeLineChartSpec.js";
-import type { GraphLineData, GraphPointData } from "./src/types.d.ts";
+import type {
+    ExtraPayments,
+    GraphPointData,
+    LoanState,
+} from "./src/types.d.ts";
 
 // TODO: What about an adjusted-dollars version?
 // TODO: Graphs per payoff-option that show everything on one graph?
@@ -13,70 +17,77 @@ const monthlyTowardsLoan =
     config.loan.monthlyPayment - config.loan.monthlyEscrow;
 const monthlyInterestRate = config.loan.interest / 12 / 100;
 
-const graphData: GraphLineData[] = [];
+const graphData: GraphPointData[] = [];
 
 function runThing(includeLumpSums: boolean, extraMonthlyAmount: number) {
-    let currentYear = config.loan.startYear;
-    let currentMonth = config.loan.startMonth;
-    let interestPaid = 0;
-    let remainingPrincipal = config.loan.principal;
-    let belowTarget = false;
-    const thisData: GraphLineData = {
-        includeLumpSums: includeLumpSums,
-        extraMonthlyAmount: extraMonthlyAmount,
-        points: [],
+    let state: LoanState = {
+        year: config.loan.startYear,
+        month: config.loan.startMonth,
+        remainingPrincipal: config.loan.principal,
+        interestPaid: 0,
     };
-    graphData.push(thisData);
 
-    while (remainingPrincipal > 0) {
-        const thisMonthsInterest = remainingPrincipal * monthlyInterestRate;
+    const extra: ExtraPayments = {
+        lumpSums: includeLumpSums
+            ? config.extraPayments.lumpSums.map(ls => ({
+                  year: ls[0],
+                  month: ls[1],
+                  amount: ls[2],
+              }))
+            : [],
+        monthly: includeLumpSums
+            ? {
+                  start: {
+                      year: config.extraPayments.extraMonthlyStart[0],
+                      month: config.extraPayments.extraMonthlyStart[1],
+                  },
+                  amount: extraMonthlyAmount,
+              }
+            : { start: { year: 0, month: 0 }, amount: 0 },
+    };
+
+    const label = includeLumpSums ? extraMonthlyAmount : "30 Year";
+
+    while (state.remainingPrincipal > 0) {
+        const thisMonthsInterest =
+            state.remainingPrincipal * monthlyInterestRate;
+        state.interestPaid += thisMonthsInterest;
+
         const thisMonthsScheduledPrincipal =
             monthlyTowardsLoan - thisMonthsInterest;
-        remainingPrincipal -= thisMonthsScheduledPrincipal;
+        state.remainingPrincipal -= thisMonthsScheduledPrincipal;
 
-        if (includeLumpSums) {
-            const lumpSum = config.extraPayments.lumpSums.find(
-                t => t[0] === currentYear && t[1] === currentMonth
-            );
-            if (lumpSum) {
-                remainingPrincipal -= lumpSum[2];
-            }
+        const lumpSum =
+            extra.lumpSums.find(
+                test => test.year === state.year && test.month === state.month
+            )?.amount || 0;
+        state.remainingPrincipal -= lumpSum;
 
-            if (
-                currentYear > config.extraPayments.extraMonthlyStart[0] ||
-                (currentYear === config.extraPayments.extraMonthlyStart[0] &&
-                    currentMonth >= config.extraPayments.extraMonthlyStart[1])
-            ) {
-                remainingPrincipal -= extraMonthlyAmount;
-            }
-        }
+        if (
+            state.year > extra.monthly.start.year ||
+            (state.year === extra.monthly.start.year &&
+                state.month >= extra.monthly.start.month)
+        )
+            state.remainingPrincipal -= extra.monthly.amount;
 
-        interestPaid += thisMonthsInterest;
-
-        thisData.points.push({
-            year: currentYear,
-            month: currentMonth,
-            remainingPrincipal: remainingPrincipal,
-            interestPaid: interestPaid,
+        graphData.push({
+            label: label,
+            date: new Date(state.year, state.month - 1, 1),
+            remainingPrincipal: state.remainingPrincipal,
+            principalPaid: config.loan.principal - state.remainingPrincipal,
+            interestPaid: state.interestPaid,
+            totalPaid:
+                config.loan.principal -
+                state.remainingPrincipal +
+                state.interestPaid,
         });
 
-        if (remainingPrincipal < config.target.principal && !belowTarget) {
-            belowTarget = true;
-            console.log(
-                `[${extraMonthlyAmount}] [${includeLumpSums ? "x" : " "}] Principal is below \$${config.target.principal.toFixed(2)} in ${currentYear}/${currentMonth}. Total Interest Paid: \$${interestPaid.toFixed(2)}.`
-            );
-        }
-
-        currentMonth++;
-        if (currentMonth > 12) {
-            currentYear++;
-            currentMonth -= 12;
+        state.month++;
+        if (state.month > 12) {
+            state.year++;
+            state.month -= 12;
         }
     }
-
-    console.log(
-        `[${extraMonthlyAmount}] [${includeLumpSums ? "x" : " "}] Principal is $0 in ${currentYear}/${currentMonth}. Total Interest Paid: \$${interestPaid.toFixed(2)}.`
-    );
 }
 
 if (config.graphs.includeRaw30Year) runThing(false, 0);
@@ -84,20 +95,6 @@ if (config.graphs.includeRaw30Year) runThing(false, 0);
 for (const extraMonthly of config.extraPayments.extraMonthlyOptions) {
     runThing(true, extraMonthly);
 }
-
-const flatData: GraphPointData[] = graphData.flatMap<GraphPointData>(series =>
-    series.points.map<GraphPointData>(p => ({
-        date: new Date(p.year, p.month - 1, 1),
-        remainingPrincipal: p.remainingPrincipal,
-        principalPaid: config.loan.principal - p.remainingPrincipal,
-        interestPaid: p.interestPaid,
-        totalPaid:
-            config.loan.principal - p.remainingPrincipal + p.interestPaid,
-        label: series.includeLumpSums
-            ? series.extraMonthlyAmount.toString()
-            : "30 Year",
-    }))
-);
 
 async function renderSvg(
     spec: Parameters<typeof compile>[0],
@@ -117,7 +114,7 @@ fs.mkdir("./output", { recursive: true })
         const renderPromises = [];
 
         const principalRemainingSpec = makeLineChartSpec({
-            data: flatData,
+            data: graphData,
             yField: "remainingPrincipal",
             yTitle: "Remaining Principal ($)",
             horizRule: config.target.principal,
@@ -130,7 +127,7 @@ fs.mkdir("./output", { recursive: true })
         );
 
         const interestSpec = makeLineChartSpec({
-            data: flatData,
+            data: graphData,
             yField: "interestPaid",
             yTitle: "Total Interest Paid ($)",
         });
@@ -139,7 +136,7 @@ fs.mkdir("./output", { recursive: true })
         );
 
         const principalPaidSpec = makeLineChartSpec({
-            data: flatData,
+            data: graphData,
             yField: "principalPaid",
             yTitle: "Principal Paid ($)",
         });
@@ -148,7 +145,7 @@ fs.mkdir("./output", { recursive: true })
         );
 
         const totalPaidSpec = makeLineChartSpec({
-            data: flatData,
+            data: graphData,
             yField: "totalPaid",
             yTitle: "Total Paid ($)",
         });

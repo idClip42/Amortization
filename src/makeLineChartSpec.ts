@@ -49,6 +49,7 @@ export function makeLineChartSpec({
                 },
             },
             {
+                // TODO: Make optional
                 mark: {
                     type: "rule",
                     color: "red",
