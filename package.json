@@ -2,14 +2,20 @@
     "name": "amortization",
     "version": "1.0.0",
     "description": "",
-    "main": "index.js",
+    "type": "module",
+    "main": "index.ts",
     "scripts": {
-        "start": "node index.js"
+        "start": "npx tsc && node dist/index.js"
     },
     "author": "",
     "license": "ISC",
     "dependencies": {
         "vega": "^6.2.0",
         "vega-lite": "^6.4.2"
+    },
+    "devDependencies": {
+        "@types/node": "^25.3.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.9.3"
     }
 }

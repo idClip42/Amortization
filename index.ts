@@ -3,25 +3,25 @@ import fs from "fs/promises";
 import { compile } from "vega-lite";
 import { parse, View } from "vega";
 import { makeLineChartSpec } from "./src/makeLineChartSpec.js";
+import type { GraphLineData, GraphPointData } from "./src/types.d.ts";
 
 // TODO: What about an adjusted-dollars version?
 // TODO: Graphs per payoff-option that show everything on one graph?
 // TODO: Break out into separate files?
-// TODO: Types?
 
 const monthlyTowardsLoan =
     config.loan.monthlyPayment - config.loan.monthlyEscrow;
 const monthlyInterestRate = config.loan.interest / 12 / 100;
 
-const graphData = [];
+const graphData: GraphLineData[] = [];
 
-function runThing(includeLumpSums, extraMonthlyAmount) {
+function runThing(includeLumpSums: boolean, extraMonthlyAmount: number) {
     let currentYear = config.loan.startYear;
     let currentMonth = config.loan.startMonth;
     let interestPaid = 0;
     let remainingPrincipal = config.loan.principal;
     let belowTarget = false;
-    const thisData = {
+    const thisData: GraphLineData = {
         includeLumpSums: includeLumpSums,
         extraMonthlyAmount: extraMonthlyAmount,
         points: [],
@@ -85,19 +85,24 @@ for (const extraMonthly of config.extraPayments.extraMonthlyOptions) {
     runThing(true, extraMonthly);
 }
 
-const flatData = graphData.flatMap(series =>
-    series.points.map(p => ({
+const flatData: GraphPointData[] = graphData.flatMap<GraphPointData>(series =>
+    series.points.map<GraphPointData>(p => ({
         date: new Date(p.year, p.month - 1, 1),
         remainingPrincipal: p.remainingPrincipal,
         principalPaid: config.loan.principal - p.remainingPrincipal,
         interestPaid: p.interestPaid,
         totalPaid:
             config.loan.principal - p.remainingPrincipal + p.interestPaid,
-        label: series.includeLumpSums ? series.extraMonthlyAmount : "30 Year",
+        label: series.includeLumpSums
+            ? series.extraMonthlyAmount.toString()
+            : "30 Year",
     }))
 );
 
-async function renderSvg(spec, outputPath) {
+async function renderSvg(
+    spec: Parameters<typeof compile>[0],
+    outputPath: string
+) {
     const { spec: vegaSpec } = compile(spec);
     const view = new View(parse(vegaSpec), {
         renderer: "svg",
@@ -107,52 +112,52 @@ async function renderSvg(spec, outputPath) {
     await fs.writeFile(outputPath, svg);
 }
 
-await fs.mkdir("./output", { recursive: true });
+fs.mkdir("./output", { recursive: true })
+    .then(() => {
+        const renderPromises = [];
 
-// Graph 1: Remaining principal
-const principalRemainingSpec = makeLineChartSpec({
-    data: flatData,
-    yField: "remainingPrincipal",
-    yTitle: "Remaining Principal ($)",
-});
-principalRemainingSpec.layer.push({
-    mark: {
-        type: "rule",
-        color: "red",
-        strokeDash: [6, 6],
-    },
-    encoding: {
-        y: { datum: config.target.principal },
-        x: {
-            aggregate: "min",
-            field: "date",
-            type: "temporal",
-        },
-        x2: {
-            aggregate: "max",
-            field: "date",
-        },
-    },
-});
-await renderSvg(principalRemainingSpec, "./output/principal_remaining.svg");
+        const principalRemainingSpec = makeLineChartSpec({
+            data: flatData,
+            yField: "remainingPrincipal",
+            yTitle: "Remaining Principal ($)",
+            horizRule: config.target.principal,
+        });
+        renderPromises.push(
+            renderSvg(
+                principalRemainingSpec,
+                "./output/principal_remaining.svg"
+            )
+        );
 
-const interestSpec = makeLineChartSpec({
-    data: flatData,
-    yField: "interestPaid",
-    yTitle: "Total Interest Paid ($)",
-});
-await renderSvg(interestSpec, "./output/interest_paid.svg");
+        const interestSpec = makeLineChartSpec({
+            data: flatData,
+            yField: "interestPaid",
+            yTitle: "Total Interest Paid ($)",
+        });
+        renderPromises.push(
+            renderSvg(interestSpec, "./output/interest_paid.svg")
+        );
 
-const principalPaidSpec = makeLineChartSpec({
-    data: flatData,
-    yField: "principalPaid",
-    yTitle: "Principal Paid ($)",
-});
-await renderSvg(principalPaidSpec, "./output/principal_paid.svg");
+        const principalPaidSpec = makeLineChartSpec({
+            data: flatData,
+            yField: "principalPaid",
+            yTitle: "Principal Paid ($)",
+        });
+        renderPromises.push(
+            renderSvg(principalPaidSpec, "./output/principal_paid.svg")
+        );
 
-const totalPaidSpec = makeLineChartSpec({
-    data: flatData,
-    yField: "totalPaid",
-    yTitle: "Total Paid ($)",
-});
-await renderSvg(totalPaidSpec, "./output/total_paid.svg");
+        const totalPaidSpec = makeLineChartSpec({
+            data: flatData,
+            yField: "totalPaid",
+            yTitle: "Total Paid ($)",
+        });
+        renderPromises.push(
+            renderSvg(totalPaidSpec, "./output/total_paid.svg")
+        );
+
+        return Promise.all(renderPromises);
+    })
+    .then(() => {
+        console.log("All graphs rendered.");
+    });
