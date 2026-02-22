@@ -5,19 +5,22 @@ import type { ExtraPayments, GraphPointData, LoanState } from "./types.js";
 export function run(
     label: string | number,
     loan: (typeof Config)["loan"],
-    extra: ExtraPayments
+    extra: ExtraPayments,
+    inflationDate: Date
 ): GraphPointData[] {
     let state: LoanState = {
         year: loan.startYear,
         month: loan.startMonth,
         principalPaid: 0,
+        principalPaidAdjusted: 0,
         interestPaid: 0,
+        interestPaidAdjusted: 0,
         loan: loan,
     };
     const graphData: GraphPointData[] = [];
 
     while (state.principalPaid < loan.principal) {
-        state = calculateMonth(state, extra);
+        state = calculateMonth(state, extra, inflationDate);
 
         graphData.push({
             label: label,

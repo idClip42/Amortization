@@ -19,7 +19,8 @@ async function renderSvg(
 
 export function renderGraphs(
     data: GraphPointData[],
-    targetPrincipal: number
+    targetPrincipal: number,
+    inflationDate: Date
 ): Promise<void> {
     return fs
         .mkdir("./output", { recursive: true })

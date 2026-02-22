@@ -8,7 +8,9 @@ export type YearMonth = {
 
 export type LoanState = YearMonth & {
     principalPaid: number;
+    principalPaidAdjusted: number;
     interestPaid: number;
+    interestPaidAdjusted: number;
     loan: Readonly<(typeof Config)["loan"]>;
 };
 
