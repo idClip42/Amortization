@@ -22,11 +22,11 @@ function quickSeriesUtil(
     data: GraphPointData[],
     yKey: keyof GraphPointData
 ): Series[] {
-    const datasetNames = [...new Set(data.map(d => d.label))];
+    const datasetNames = [...new Set(data.map(d => d.name))];
     return datasetNames.map(name => ({
         name: name,
         data: data
-            .filter(d => d.label === name)
+            .filter(d => d.name === name)
             .map(d => ({
                 x: d.date,
                 y: Number(d[yKey]),
@@ -87,6 +87,35 @@ export function renderGraphs(
             renderPromises.push(
                 renderSvg(totalPaidSpec, "./output/total_paid.svg")
             );
+
+            const datasetNames = [...new Set(data.map(d => d.name))];
+            for (const datasetName of datasetNames) {
+                const setData = data.filter(d => d.name === datasetName);
+                const pAndISpec = makeLineChartSpec({
+                    series: [
+                        {
+                            name: "Principal",
+                            data: setData.map(d => ({
+                                x: d.date,
+                                y: d.principalPaid,
+                            })),
+                        },
+                        {
+                            name: "Interest",
+                            data: setData.map(d => ({
+                                x: d.date,
+                                y: d.interestPaid,
+                            })),
+                        },
+                    ],
+                    yTitle: "Total Paid ($)",
+                    horizRule: loan.principal,
+                    stackedFill: true,
+                });
+                renderPromises.push(
+                    renderSvg(pAndISpec, `./output/pAndI_${datasetName}.svg`)
+                );
+            }
 
             // AMOUNT PAID (ADJUSTED)
 

@@ -20,7 +20,7 @@ export type ExtraPayments = {
 };
 
 export type GraphPointData = {
-    label: string | number;
+    name: string | number;
     date: Date;
     remainingPrincipal: number;
     principalPaid: number;

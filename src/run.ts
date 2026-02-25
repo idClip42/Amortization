@@ -23,7 +23,7 @@ export function run(
         state = calculateMonth(state, extra, inflationDate);
 
         graphData.push({
-            label: label,
+            name: label,
             date: new Date(state.year, state.month - 1, 1),
             remainingPrincipal: loan.principal - state.principalPaid,
             principalPaid: state.principalPaid,

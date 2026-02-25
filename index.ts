@@ -3,10 +3,6 @@ import type { GraphPointData } from "./src/types.d.ts";
 import { run } from "./src/run.js";
 import { renderGraphs } from "./src/render.js";
 
-// TODO: Graphs per payoff-option that show everything on one graph?
-// TODO: Graphs that show interest paid line and principal paid line together per option
-// TODO: (to show difference between money lost and money paid to self)
-
 const currentDate = new Date();
 const graphData: GraphPointData[][] = [];
 
