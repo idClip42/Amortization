@@ -50,6 +50,7 @@ for (const extraMonthly of config.extraPayments.extraMonthlyOptions) {
 
 renderGraphs(
     graphData.flat<GraphPointData[][]>(),
+    config.loan,
     config.target.principal,
     currentDate
 );

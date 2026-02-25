@@ -1,53 +1,103 @@
-import type { GraphPointData } from "./types.d.ts";
 import type { compile } from "vega-lite";
 
-type Input = {
-    data: GraphPointData[];
-    yField: keyof GraphPointData;
-    yTitle: string;
-    horizRule?: number;
+const width = 800;
+const height = 400;
+
+type XYPoint = {
+    x: Date;
+    y: number;
 };
 
+export type Series = {
+    name: string | number;
+    data: XYPoint[];
+};
+
+type Input = {
+    series: Series[];
+
+    yTitle: string;
+
+    /** Draw a horizontal rule if provided */
+    horizRule: number;
+
+    /** Fill between stacked series (area chart style) */
+    stackedFill?: boolean;
+};
+
+function flattenSeries(series: Series[]) {
+    return series.flatMap(s =>
+        s.data.map(p => ({
+            x: p.x,
+            y: p.y,
+            series: s.name,
+        }))
+    );
+}
+
 export function makeLineChartSpec({
-    data,
-    yField,
+    series,
     yTitle,
     horizRule,
+    stackedFill = false,
 }: Input): Parameters<typeof compile>[0] {
-    const result: Parameters<typeof compile>[0] = {
+    const values = flattenSeries(series);
+
+    const baseLayer = stackedFill
+        ? ({
+              mark: {
+                  type: "area",
+                  interpolate: "monotone",
+              },
+              encoding: {
+                  y: {
+                      field: "y",
+                      type: "quantitative",
+                      stack: "zero",
+                      scale: { domainMin: 0 },
+                  },
+              },
+          } as const)
+        : ({
+              mark: {
+                  type: "line",
+                  interpolate: "monotone",
+              },
+              encoding: {
+                  y: {
+                      field: "y",
+                      type: "quantitative",
+                      scale: { domainMin: 0 },
+                  },
+              },
+          } as const);
+
+    return {
         $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-        width: 800,
-        height: 400,
-        data: { values: data },
+        width,
+        height,
+
+        data: { values },
 
         encoding: {
             x: {
-                field: "date",
+                field: "x",
                 type: "temporal",
                 title: "Date",
-                axis: {
-                    format: "%Y-%m",
-                },
+                axis: { format: "%Y-%m" },
+            },
+            y: {
+                title: yTitle,
             },
             color: {
-                field: "label",
+                field: "series",
                 type: "nominal",
-                title: "Extra Monthly Payment ($)",
+                title: "Series",
             },
         },
 
         layer: [
-            {
-                mark: { type: "line" },
-                encoding: {
-                    y: {
-                        field: yField,
-                        type: "quantitative",
-                        title: yTitle,
-                        scale: { domainMin: 0 },
-                    },
-                },
-            },
+            baseLayer,
             {
                 mark: {
                     type: "rule",
@@ -55,22 +105,18 @@ export function makeLineChartSpec({
                     strokeDash: [6, 6],
                 },
                 encoding: {
-                    y: { datum: horizRule || -1 },
+                    y: { datum: horizRule },
                     x: {
                         aggregate: "min",
-                        field: "date",
+                        field: "x",
                         type: "temporal",
                     },
                     x2: {
                         aggregate: "max",
-                        field: "date",
+                        field: "x",
                     },
                 },
             },
         ],
     };
-
-    if (!horizRule) result.layer.splice(1, 1);
-
-    return result;
 }

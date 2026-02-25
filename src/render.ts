@@ -2,7 +2,8 @@ import fs from "fs/promises";
 import { compile } from "vega-lite";
 import { parse, View } from "vega";
 import { GraphPointData } from "./types.js";
-import { makeLineChartSpec } from "./makeLineChartSpec.js";
+import { makeLineChartSpec, type Series } from "./makeLineChartSpec.js";
+import type Config from "./../config.json";
 
 async function renderSvg(
     spec: Parameters<typeof compile>[0],
@@ -17,21 +18,37 @@ async function renderSvg(
     await fs.writeFile(outputPath, svg);
 }
 
+function quickSeriesUtil(
+    data: GraphPointData[],
+    yKey: keyof GraphPointData
+): Series[] {
+    const datasetNames = [...new Set(data.map(d => d.label))];
+    return datasetNames.map(name => ({
+        name: name,
+        data: data
+            .filter(d => d.label === name)
+            .map(d => ({
+                x: d.date,
+                y: Number(d[yKey]),
+            })),
+    }));
+}
+
 export function renderGraphs(
     data: GraphPointData[],
+    loan: (typeof Config)["loan"],
     targetPrincipal: number,
     inflationDate: Date
 ): Promise<void> {
     return fs
         .mkdir("./output", { recursive: true })
         .then(() => {
-            const renderPromises = [];
+            const renderPromises: Promise<void>[] = [];
 
             // REMAINING PRINCIPAL
 
             const principalRemainingSpec = makeLineChartSpec({
-                data: data,
-                yField: "remainingPrincipal",
+                series: quickSeriesUtil(data, "remainingPrincipal"),
                 yTitle: "Remaining Principal ($)",
                 horizRule: targetPrincipal,
             });
@@ -45,27 +62,27 @@ export function renderGraphs(
             // AMOUNT PAID
 
             const interestSpec = makeLineChartSpec({
-                data: data,
-                yField: "interestPaid",
+                series: quickSeriesUtil(data, "interestPaid"),
                 yTitle: "Total Interest Paid ($)",
+                horizRule: 0,
             });
             renderPromises.push(
                 renderSvg(interestSpec, "./output/interest_paid.svg")
             );
 
             const principalPaidSpec = makeLineChartSpec({
-                data: data,
-                yField: "principalPaid",
+                series: quickSeriesUtil(data, "principalPaid"),
                 yTitle: "Principal Paid ($)",
+                horizRule: loan.principal,
             });
             renderPromises.push(
                 renderSvg(principalPaidSpec, "./output/principal_paid.svg")
             );
 
             const totalPaidSpec = makeLineChartSpec({
-                data: data,
-                yField: "totalPaid",
+                series: quickSeriesUtil(data, "totalPaid"),
                 yTitle: "Total Paid ($)",
+                horizRule: loan.principal,
             });
             renderPromises.push(
                 renderSvg(totalPaidSpec, "./output/total_paid.svg")
@@ -74,9 +91,9 @@ export function renderGraphs(
             // AMOUNT PAID (ADJUSTED)
 
             const interestAdjSpec = makeLineChartSpec({
-                data: data,
-                yField: "interestPaidAdjusted",
+                series: quickSeriesUtil(data, "interestPaidAdjusted"),
                 yTitle: `Total Interest Paid (${inflationDate.getFullYear()}$)`,
+                horizRule: 0,
             });
             renderPromises.push(
                 renderSvg(
@@ -86,9 +103,9 @@ export function renderGraphs(
             );
 
             const principalPaidAdjSpec = makeLineChartSpec({
-                data: data,
-                yField: "principalPaidAdjusted",
+                series: quickSeriesUtil(data, "principalPaidAdjusted"),
                 yTitle: `Principal Paid (${inflationDate.getFullYear()}$)`,
+                horizRule: 0,
             });
             renderPromises.push(
                 renderSvg(
@@ -98,9 +115,9 @@ export function renderGraphs(
             );
 
             const totalPaidAdjSpec = makeLineChartSpec({
-                data: data,
-                yField: "totalPaidAdjusted",
+                series: quickSeriesUtil(data, "totalPaidAdjusted"),
                 yTitle: `Total Paid (${inflationDate.getFullYear()}$)`,
+                horizRule: 0,
             });
             renderPromises.push(
                 renderSvg(totalPaidAdjSpec, "./output/adjusted_total_paid.svg")
