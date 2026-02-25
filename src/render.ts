@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import path from "path";
 import { compile } from "vega-lite";
 import { parse, View } from "vega";
 import { GraphPointData } from "./types.js";
@@ -16,6 +17,7 @@ async function renderSvg(
     });
 
     const svg = await view.toSVG();
+    await fs.mkdir(path.dirname(outputPath), { recursive: true });
     await fs.writeFile(outputPath, svg);
 }
 
@@ -41,166 +43,158 @@ export function renderGraphs(
     targetPrincipal: number,
     inflationDate: Date
 ): Promise<void> {
-    return fs
-        .mkdir("./output", { recursive: true })
-        .then(() => {
-            const renderPromises: Promise<void>[] = [];
-            const datasetNames = [...new Set(data.map(d => d.name))];
+    const renderPromises: Promise<void>[] = [];
+    const datasetNames = [...new Set(data.map(d => d.name))];
 
-            // REMAINING PRINCIPAL
+    // REMAINING PRINCIPAL
 
-            const principalRemainingSpec = makeLineChartSpec({
-                title: "Principal Remaining Over Time",
-                series: quickSeriesUtil(data, "remainingPrincipal"),
-                yTitle: "Remaining Principal ($)",
-                horizRule: targetPrincipal,
-            });
-            renderPromises.push(
-                renderSvg(
-                    principalRemainingSpec,
-                    "./output/principal_remaining.svg"
-                )
-            );
+    const principalRemainingSpec = makeLineChartSpec({
+        title: "Principal Remaining Over Time (nominal dollars)",
+        series: quickSeriesUtil(data, "remainingPrincipal"),
+        yTitle: "Remaining Principal ($)",
+        horizRule: targetPrincipal,
+    });
+    renderPromises.push(
+        renderSvg(
+            principalRemainingSpec,
+            "./output/nominal/principal_remaining.svg"
+        )
+    );
 
-            // AMOUNT PAID
+    // AMOUNT PAID
 
-            const interestSpec = makeLineChartSpec({
-                title: "Total Interest Paid Over Time",
-                series: quickSeriesUtil(data, "interestPaid"),
-                yTitle: "Total Interest Paid ($)",
-                horizRule: 0,
-            });
-            renderPromises.push(
-                renderSvg(interestSpec, "./output/interest_paid.svg")
-            );
+    const interestSpec = makeLineChartSpec({
+        title: "Total Interest Paid Over Time (nominal dollars)",
+        series: quickSeriesUtil(data, "interestPaid"),
+        yTitle: "Total Interest Paid ($)",
+        horizRule: 0,
+    });
+    renderPromises.push(
+        renderSvg(interestSpec, "./output/nominal/interest_paid.svg")
+    );
 
-            const principalPaidSpec = makeLineChartSpec({
-                title: "Total Principal Paid Over Time",
-                series: quickSeriesUtil(data, "principalPaid"),
-                yTitle: "Principal Paid ($)",
-                horizRule: loan.principal,
-            });
-            renderPromises.push(
-                renderSvg(principalPaidSpec, "./output/principal_paid.svg")
-            );
+    const principalPaidSpec = makeLineChartSpec({
+        title: "Total Principal Paid Over Time (nominal dollars)",
+        series: quickSeriesUtil(data, "principalPaid"),
+        yTitle: "Principal Paid ($)",
+        horizRule: loan.principal,
+    });
+    renderPromises.push(
+        renderSvg(principalPaidSpec, "./output/nominal/principal_paid.svg")
+    );
 
-            const totalPaidSpec = makeLineChartSpec({
-                title: "Total Paid Over Time",
-                series: quickSeriesUtil(data, "totalPaid"),
-                yTitle: "Total Paid ($)",
-                horizRule: loan.principal,
-            });
-            renderPromises.push(
-                renderSvg(totalPaidSpec, "./output/total_paid.svg")
-            );
+    const totalPaidSpec = makeLineChartSpec({
+        title: "Total Paid Over Time (nominal dollars)",
+        series: quickSeriesUtil(data, "totalPaid"),
+        yTitle: "Total Paid ($)",
+        horizRule: loan.principal,
+    });
+    renderPromises.push(
+        renderSvg(totalPaidSpec, "./output/nominal/total_paid.svg")
+    );
 
-            for (const datasetName of datasetNames) {
-                const setData = data.filter(d => d.name === datasetName);
-                const pAndISpec = makeLineChartSpec({
-                    title: `Total Paid Over Time ("${datasetName}")`,
-                    series: [
-                        {
-                            name: "Principal",
-                            data: setData.map(d => ({
-                                x: d.date,
-                                y: d.principalPaid,
-                            })),
-                        },
-                        {
-                            name: "Interest",
-                            data: setData.map(d => ({
-                                x: d.date,
-                                y: d.interestPaid,
-                            })),
-                        },
-                    ],
-                    yTitle: "Total Paid ($)",
-                    horizRule: loan.principal,
-                    stackedFill: true,
-                });
-                renderPromises.push(
-                    renderSvg(
-                        pAndISpec,
-                        `./output/pAndI_${toSafeFilename(datasetName)}.svg`
-                    )
-                );
-            }
-
-            // AMOUNT PAID (ADJUSTED)
-
-            const interestAdjSpec = makeLineChartSpec({
-                title: `Total Interest Paid Over Time (in ${inflationDate.getFullYear()} dollars)`,
-                series: quickSeriesUtil(data, "interestPaidAdjusted"),
-                yTitle: `Total Interest Paid (${inflationDate.getFullYear()}$)`,
-                horizRule: 0,
-            });
-            renderPromises.push(
-                renderSvg(
-                    interestAdjSpec,
-                    "./output/adjusted_interest_paid.svg"
-                )
-            );
-
-            const principalPaidAdjSpec = makeLineChartSpec({
-                title: `Total Principal Paid Over Time (in ${inflationDate.getFullYear()} dollars)`,
-                series: quickSeriesUtil(data, "principalPaidAdjusted"),
-                yTitle: `Principal Paid (${inflationDate.getFullYear()}$)`,
-                horizRule: 0,
-            });
-            renderPromises.push(
-                renderSvg(
-                    principalPaidAdjSpec,
-                    "./output/adjusted_principal_paid.svg"
-                )
-            );
-
-            const totalPaidAdjSpec = makeLineChartSpec({
-                title: `Total Paid Over Time (in ${inflationDate.getFullYear()} dollars)`,
-                series: quickSeriesUtil(data, "totalPaidAdjusted"),
-                yTitle: `Total Paid (${inflationDate.getFullYear()}$)`,
-                horizRule: 0,
-            });
-            renderPromises.push(
-                renderSvg(totalPaidAdjSpec, "./output/adjusted_total_paid.svg")
-            );
-
-            for (const datasetName of datasetNames) {
-                const setData = data.filter(d => d.name === datasetName);
-                const pAndISpec = makeLineChartSpec({
-                    title: `Total Paid Over Time (in ${inflationDate.getFullYear()} dollars) ("${datasetName}")`,
-                    series: [
-                        {
-                            name: "Principal",
-                            data: setData.map(d => ({
-                                x: d.date,
-                                y: d.principalPaidAdjusted,
-                            })),
-                        },
-                        {
-                            name: "Interest",
-                            data: setData.map(d => ({
-                                x: d.date,
-                                y: d.interestPaidAdjusted,
-                            })),
-                        },
-                    ],
-                    yTitle: "Total Paid ($)",
-                    horizRule: 0,
-                    stackedFill: true,
-                });
-                renderPromises.push(
-                    renderSvg(
-                        pAndISpec,
-                        `./output/adjusted_pAndI_${toSafeFilename(datasetName)}.svg`
-                    )
-                );
-            }
-
-            // WAIT FOR ALL
-
-            return Promise.all(renderPromises);
-        })
-        .then(() => {
-            console.log("All graphs rendered.");
+    for (const datasetName of datasetNames) {
+        const setData = data.filter(d => d.name === datasetName);
+        const pAndISpec = makeLineChartSpec({
+            title: `Total Paid Over Time (nominal dollars) ("${datasetName}")`,
+            series: [
+                {
+                    name: "Principal",
+                    data: setData.map(d => ({
+                        x: d.date,
+                        y: d.principalPaid,
+                    })),
+                },
+                {
+                    name: "Interest",
+                    data: setData.map(d => ({
+                        x: d.date,
+                        y: d.interestPaid,
+                    })),
+                },
+            ],
+            yTitle: "Total Paid ($)",
+            horizRule: loan.principal,
+            stackedFill: true,
         });
+        renderPromises.push(
+            renderSvg(
+                pAndISpec,
+                `./output/nominal/per-dataset/${toSafeFilename(datasetName)}.svg`
+            )
+        );
+    }
+
+    // AMOUNT PAID (ADJUSTED)
+
+    const interestAdjSpec = makeLineChartSpec({
+        title: `Total Interest Paid Over Time (real ${inflationDate.getFullYear()} dollars)`,
+        series: quickSeriesUtil(data, "interestPaidAdjusted"),
+        yTitle: `Total Interest Paid (${inflationDate.getFullYear()}$)`,
+        horizRule: 0,
+    });
+    renderPromises.push(
+        renderSvg(interestAdjSpec, "./output/real-adjusted/interest_paid.svg")
+    );
+
+    const principalPaidAdjSpec = makeLineChartSpec({
+        title: `Total Principal Paid Over Time (real ${inflationDate.getFullYear()} dollars)`,
+        series: quickSeriesUtil(data, "principalPaidAdjusted"),
+        yTitle: `Principal Paid (${inflationDate.getFullYear()}$)`,
+        horizRule: 0,
+    });
+    renderPromises.push(
+        renderSvg(
+            principalPaidAdjSpec,
+            "./output/real-adjusted/principal_paid.svg"
+        )
+    );
+
+    const totalPaidAdjSpec = makeLineChartSpec({
+        title: `Total Paid Over Time (real ${inflationDate.getFullYear()} dollars)`,
+        series: quickSeriesUtil(data, "totalPaidAdjusted"),
+        yTitle: `Total Paid (${inflationDate.getFullYear()}$)`,
+        horizRule: 0,
+    });
+    renderPromises.push(
+        renderSvg(totalPaidAdjSpec, "./output/real-adjusted/total_paid.svg")
+    );
+
+    for (const datasetName of datasetNames) {
+        const setData = data.filter(d => d.name === datasetName);
+        const pAndISpec = makeLineChartSpec({
+            title: `Total Paid Over Time (real ${inflationDate.getFullYear()} dollars) ("${datasetName}")`,
+            series: [
+                {
+                    name: "Principal",
+                    data: setData.map(d => ({
+                        x: d.date,
+                        y: d.principalPaidAdjusted,
+                    })),
+                },
+                {
+                    name: "Interest",
+                    data: setData.map(d => ({
+                        x: d.date,
+                        y: d.interestPaidAdjusted,
+                    })),
+                },
+            ],
+            yTitle: "Total Paid ($)",
+            horizRule: 0,
+            stackedFill: true,
+        });
+        renderPromises.push(
+            renderSvg(
+                pAndISpec,
+                `./output/real-adjusted/per-dataset/${toSafeFilename(datasetName)}.svg`
+            )
+        );
+    }
+
+    // WAIT FOR ALL
+
+    return Promise.all(renderPromises).then(() => {
+        console.log("All graphs rendered.");
+    });
 }
