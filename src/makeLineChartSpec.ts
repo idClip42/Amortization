@@ -14,13 +14,11 @@ export type Series = {
 };
 
 type Input = {
+    title: string;
     series: Series[];
-
     yTitle: string;
-
     /** Draw a horizontal rule if provided */
     horizRule: number;
-
     /** Fill between stacked series (area chart style) */
     stackedFill?: boolean;
 };
@@ -36,6 +34,7 @@ function flattenSeries(series: Series[]) {
 }
 
 export function makeLineChartSpec({
+    title,
     series,
     yTitle,
     horizRule,
@@ -74,6 +73,7 @@ export function makeLineChartSpec({
 
     return {
         $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+        title,
         width,
         height,
 
