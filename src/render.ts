@@ -99,17 +99,17 @@ export function renderGraphs(
             title: `Total Paid Over Time (nominal dollars) ("${datasetName}")`,
             series: [
                 {
-                    name: "Principal",
-                    data: setData.map(d => ({
-                        x: d.date,
-                        y: d.principalPaid,
-                    })),
-                },
-                {
                     name: "Interest",
                     data: setData.map(d => ({
                         x: d.date,
                         y: d.interestPaid,
+                    })),
+                },
+                {
+                    name: "Principal",
+                    data: setData.map(d => ({
+                        x: d.date,
+                        y: d.principalPaid,
                     })),
                 },
             ],
@@ -166,17 +166,17 @@ export function renderGraphs(
             title: `Total Paid Over Time (real ${inflationDate.getFullYear()} dollars) ("${datasetName}")`,
             series: [
                 {
-                    name: "Principal",
-                    data: setData.map(d => ({
-                        x: d.date,
-                        y: d.principalPaidAdjusted,
-                    })),
-                },
-                {
                     name: "Interest",
                     data: setData.map(d => ({
                         x: d.date,
                         y: d.interestPaidAdjusted,
+                    })),
+                },
+                {
+                    name: "Principal",
+                    data: setData.map(d => ({
+                        x: d.date,
+                        y: d.principalPaidAdjusted,
                     })),
                 },
             ],
