@@ -3,7 +3,7 @@ import { calculateMonth } from "./calcMonth.js";
 import type { ExtraPayments, GraphPointData, LoanState } from "./types.js";
 
 export function run(
-    label: string | number,
+    label: string,
     loan: (typeof Config)["loan"],
     extra: ExtraPayments,
     inflationDate: Date

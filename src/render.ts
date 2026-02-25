@@ -4,6 +4,7 @@ import { parse, View } from "vega";
 import { GraphPointData } from "./types.js";
 import { makeLineChartSpec, type Series } from "./makeLineChartSpec.js";
 import type Config from "./../config.json";
+import { toSafeFilename } from "./utils.js";
 
 async function renderSvg(
     spec: Parameters<typeof compile>[0],
@@ -49,7 +50,7 @@ export function renderGraphs(
             // REMAINING PRINCIPAL
 
             const principalRemainingSpec = makeLineChartSpec({
-                title: "Principal Remaning Over Time",
+                title: "Principal Remaining Over Time",
                 series: quickSeriesUtil(data, "remainingPrincipal"),
                 yTitle: "Remaining Principal ($)",
                 horizRule: targetPrincipal,
@@ -118,7 +119,10 @@ export function renderGraphs(
                     stackedFill: true,
                 });
                 renderPromises.push(
-                    renderSvg(pAndISpec, `./output/pAndI_${datasetName}.svg`)
+                    renderSvg(
+                        pAndISpec,
+                        `./output/pAndI_${toSafeFilename(datasetName)}.svg`
+                    )
                 );
             }
 
@@ -187,7 +191,7 @@ export function renderGraphs(
                 renderPromises.push(
                     renderSvg(
                         pAndISpec,
-                        `./output/adjusted_pAndI_${datasetName}.svg`
+                        `./output/adjusted_pAndI_${toSafeFilename(datasetName)}.svg`
                     )
                 );
             }

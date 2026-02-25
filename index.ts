@@ -23,7 +23,7 @@ if (config.graphs.includeRaw30Year) {
 for (const extraMonthly of config.extraPayments.extraMonthlyOptions) {
     graphData.push(
         run(
-            extraMonthly,
+            `\$${extraMonthly} Extra Monthly`,
             config.loan,
             {
                 lumpSums: config.extraPayments.lumpSums.map(ls => ({
