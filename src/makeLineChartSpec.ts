@@ -93,6 +93,9 @@ export function makeLineChartSpec({
                 field: "series",
                 type: "nominal",
                 title: "Series",
+                scale: {
+                    domain: series.map(s => s.name),
+                },
             },
         },
 
