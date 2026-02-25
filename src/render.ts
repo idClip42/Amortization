@@ -44,6 +44,7 @@ export function renderGraphs(
         .mkdir("./output", { recursive: true })
         .then(() => {
             const renderPromises: Promise<void>[] = [];
+            const datasetNames = [...new Set(data.map(d => d.name))];
 
             // REMAINING PRINCIPAL
 
@@ -92,7 +93,6 @@ export function renderGraphs(
                 renderSvg(totalPaidSpec, "./output/total_paid.svg")
             );
 
-            const datasetNames = [...new Set(data.map(d => d.name))];
             for (const datasetName of datasetNames) {
                 const setData = data.filter(d => d.name === datasetName);
                 const pAndISpec = makeLineChartSpec({
@@ -159,6 +159,38 @@ export function renderGraphs(
             renderPromises.push(
                 renderSvg(totalPaidAdjSpec, "./output/adjusted_total_paid.svg")
             );
+
+            for (const datasetName of datasetNames) {
+                const setData = data.filter(d => d.name === datasetName);
+                const pAndISpec = makeLineChartSpec({
+                    title: `Total Paid Over Time (in ${inflationDate.getFullYear()} dollars) ("${datasetName}")`,
+                    series: [
+                        {
+                            name: "Principal",
+                            data: setData.map(d => ({
+                                x: d.date,
+                                y: d.principalPaidAdjusted,
+                            })),
+                        },
+                        {
+                            name: "Interest",
+                            data: setData.map(d => ({
+                                x: d.date,
+                                y: d.interestPaidAdjusted,
+                            })),
+                        },
+                    ],
+                    yTitle: "Total Paid ($)",
+                    horizRule: 0,
+                    stackedFill: true,
+                });
+                renderPromises.push(
+                    renderSvg(
+                        pAndISpec,
+                        `./output/adjusted_pAndI_${datasetName}.svg`
+                    )
+                );
+            }
 
             // WAIT FOR ALL
 
