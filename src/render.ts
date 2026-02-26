@@ -181,7 +181,7 @@ export function renderGraphs(
                 },
             ],
             yTitle: "Total Paid ($)",
-            horizRule: 0,
+            horizRule: setData[setData.length - 1].principalPaidAdjusted,
             stackedFill: true,
         });
         renderPromises.push(
