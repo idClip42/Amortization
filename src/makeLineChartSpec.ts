@@ -44,29 +44,53 @@ export function makeLineChartSpec({
 
     const baseLayer = stackedFill
         ? ({
-              mark: {
-                  type: "area",
-                  interpolate: "monotone",
-              },
+              mark: { type: "area", interpolate: "monotone" },
               encoding: {
+                  x: {
+                      field: "x",
+                      type: "temporal",
+                      title: "Date",
+                      axis: { format: "%Y-%m" },
+                  },
                   y: {
                       field: "y",
                       type: "quantitative",
+                      title: yTitle,
                       stack: "zero",
                       scale: { domainMin: 0 },
+                  },
+                  color: {
+                      field: "series",
+                      type: "nominal",
+                      title: "Series",
+                      scale: {
+                          domain: series.map(s => s.name),
+                      },
                   },
               },
           } as const)
         : ({
-              mark: {
-                  type: "line",
-                  interpolate: "monotone",
-              },
+              mark: { type: "line", interpolate: "monotone" },
               encoding: {
+                  x: {
+                      field: "x",
+                      type: "temporal",
+                      title: "Date",
+                      axis: { format: "%Y-%m" },
+                  },
                   y: {
                       field: "y",
                       type: "quantitative",
+                      title: yTitle,
                       scale: { domainMin: 0 },
+                  },
+                  color: {
+                      field: "series",
+                      type: "nominal",
+                      title: "Series",
+                      scale: {
+                          domain: series.map(s => s.name),
+                      },
                   },
               },
           } as const);
@@ -78,26 +102,6 @@ export function makeLineChartSpec({
         height,
 
         data: { values },
-
-        encoding: {
-            x: {
-                field: "x",
-                type: "temporal",
-                title: "Date",
-                axis: { format: "%Y-%m" },
-            },
-            y: {
-                title: yTitle,
-            },
-            color: {
-                field: "series",
-                type: "nominal",
-                title: "Series",
-                scale: {
-                    domain: series.map(s => s.name),
-                },
-            },
-        },
 
         layer: [
             baseLayer,
@@ -117,6 +121,28 @@ export function makeLineChartSpec({
                     x2: {
                         aggregate: "max",
                         field: "x",
+                    },
+                },
+            },
+            {
+                mark: {
+                    type: "rule",
+                    strokeDash: [6, 6],
+                    color: "#666",
+                },
+                encoding: {
+                    x: {
+                        datum: new Date().getTime(),
+                        type: "temporal",
+                    },
+                    y: {
+                        aggregate: "min",
+                        field: "y",
+                        type: "quantitative",
+                    },
+                    y2: {
+                        aggregate: "max",
+                        field: "y",
                     },
                 },
             },
