@@ -3,6 +3,8 @@ import type { GraphPointData } from "./src/types.d.ts";
 import { run } from "./src/run.js";
 import { renderGraphs } from "./src/render.js";
 
+// TODO: Vertical line on graph indicating today?
+
 const currentDate = new Date();
 const graphData: GraphPointData[][] = [];
 
@@ -20,22 +22,31 @@ if (config.graphs.includeRaw30Year) {
     );
 }
 
+const prevLumpSums = config.extraPayments.lumpSums.map(ls => ({
+    year: ls[0],
+    month: ls[1],
+    amount: ls[2],
+}));
+const lastLumpSum = prevLumpSums[prevLumpSums.length - 1];
+
+const extraMonthlyStart = {
+    year: lastLumpSum.year,
+    month: lastLumpSum.month,
+};
+if (extraMonthlyStart.month >= 12) {
+    extraMonthlyStart.month %= 12;
+    extraMonthlyStart.year++;
+}
+
 for (const extraMonthly of config.extraPayments.extraMonthlyOptions) {
     graphData.push(
         run(
             `\$${extraMonthly} Extra Monthly`,
             config.loan,
             {
-                lumpSums: config.extraPayments.lumpSums.map(ls => ({
-                    year: ls[0],
-                    month: ls[1],
-                    amount: ls[2],
-                })),
+                lumpSums: prevLumpSums,
                 monthly: {
-                    start: {
-                        year: config.extraPayments.extraMonthlyStart[0],
-                        month: config.extraPayments.extraMonthlyStart[1],
-                    },
+                    start: extraMonthlyStart,
                     amount: extraMonthly,
                 },
             },
