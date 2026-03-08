@@ -1,12 +1,18 @@
 import type Config from "./../config.json";
 import { calculateMonth } from "./calcMonth.js";
-import type { ExtraPayments, GraphPointData, LoanState } from "./types.js";
+import type {
+    ExtraPayments,
+    GraphPointData,
+    LoanState,
+    YearMonth,
+} from "./types.js";
 
 export function run(
     label: string,
     loan: (typeof Config)["loan"],
     extra: ExtraPayments,
-    inflationDate: Date
+    inflationDate: Date,
+    optionalEndDate: YearMonth | null
 ): GraphPointData[] {
     let state: LoanState = {
         year: loan.startYear,
@@ -20,6 +26,16 @@ export function run(
     const graphData: GraphPointData[] = [];
 
     while (state.principalPaid < loan.principal) {
+        // We stop collecting data after our optional end date
+        if (optionalEndDate) {
+            if (state.year > optionalEndDate.year) break;
+            if (
+                state.year === optionalEndDate.year &&
+                state.month > optionalEndDate.month
+            )
+                break;
+        }
+
         state = calculateMonth(state, extra, inflationDate);
 
         graphData.push({

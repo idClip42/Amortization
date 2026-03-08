@@ -24,7 +24,8 @@
         "principal": 20000
     },
     "graphs": {
-        "includeRaw30Year": true
+        "includeRaw30Year": true,
+        "optionalEndDate": [2030, 1]
     },
     "inflation": {
         "estimatedRatePercentage": 2.5
