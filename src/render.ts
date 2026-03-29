@@ -1,4 +1,4 @@
-import fs from "fs/promises";
+import fs from "fs";
 import path from "path";
 import { compile } from "vega-lite";
 import { parse, View } from "vega";
@@ -6,6 +6,20 @@ import { GraphPointData } from "./types.js";
 import { makeLineChartSpec, type Series } from "./makeLineChartSpec.js";
 import type Config from "./../config.json";
 import { toSafeFilename } from "./utils.js";
+
+async function clearOldFiles(): Promise<void> {
+    const dirsToClear = [
+        "./output/nominal/per-dataset",
+        "./output/real-adjusted/per-dataset",
+    ];
+    for (const dir of dirsToClear) {
+        if (!fs.existsSync(dir)) continue;
+        const files = await fs.promises.readdir(dir);
+        for (const filename of files) {
+            await fs.promises.rm(path.join(dir, filename));
+        }
+    }
+}
 
 async function renderSvg(
     spec: Parameters<typeof compile>[0],
@@ -17,8 +31,8 @@ async function renderSvg(
     });
 
     const svg = await view.toSVG();
-    await fs.mkdir(path.dirname(outputPath), { recursive: true });
-    await fs.writeFile(outputPath, svg);
+    await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
+    await fs.promises.writeFile(outputPath, svg);
 }
 
 function quickSeriesUtil(
@@ -37,7 +51,7 @@ function quickSeriesUtil(
     }));
 }
 
-export function renderGraphs(
+export async function renderGraphs(
     data: GraphPointData[],
     loan: (typeof Config)["loan"],
     targetPrincipal: number,
@@ -45,6 +59,8 @@ export function renderGraphs(
 ): Promise<void> {
     const renderPromises: Promise<void>[] = [];
     const datasetNames = [...new Set(data.map(d => d.name))];
+
+    await clearOldFiles();
 
     // REMAINING PRINCIPAL
 
