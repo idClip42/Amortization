@@ -28,8 +28,8 @@
         "principal": 20000
     },
     "graphs": {
-        "includeRaw30Year": false,
-        "optionalEndDate": [2030, 1],
+        "includeRaw30Year": true,
+        "optionalEndDate": "January 1, 2030",
         "skipUneventfulDays": true
     },
     "inflation": {

@@ -47,6 +47,9 @@ const dataSets = configs.map(cfg => {
             // but wait til next month to make a payment.
             config.loan.paymentDay + 1
         ),
+        config.graphs.optionalEndDate
+            ? new Date(config.graphs.optionalEndDate)
+            : null,
         config.loan.principal,
         config.loan.interest,
         config.loan.monthlyPayment - config.loan.monthlyEscrow,

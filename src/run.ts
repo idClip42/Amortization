@@ -23,6 +23,7 @@ type LumpSumProjection = {
 
 export function run(
     startDate: Date,
+    optionalEndDate: Date | null,
     initialPrincipal: number,
     interestRate: number,
     monthlyPayment: number,
@@ -81,18 +82,6 @@ export function run(
 
             interestAcc = 0;
             tag = "payment";
-
-            // console.log(
-            //     day.toLocaleDateString(),
-            //     Math.round(interestAcc),
-            //     Math.round(todaysPayment),
-            //     Math.round(remainingPrincipal),
-            //     Math.round(paidInterest),
-            //     Math.round(paidPrincipal),
-            //     Math.round(paidPrincipalAdjusted),
-            //     Math.round(paidInterestAdjusted),
-            //     tag
-            // );
         }
 
         for (const lumpSum of lumpSums) {
@@ -103,15 +92,6 @@ export function run(
             paidPrincipal += lumpSum.dollars;
             paidPrincipalToday += lumpSum.dollars;
             tag = "lumpSum";
-
-            // console.log(
-            //     day.toLocaleDateString(),
-            //     Math.round(interestAcc),
-            //     Math.round(paidPrincipalToday),
-            //     Math.round(remainingPrincipal),
-            //     Math.round(paidPrincipal),
-            //     tag
-            // );
         }
 
         if (day.getTime() > lumpSumProjection.startDate.getTime()) {
@@ -120,15 +100,6 @@ export function run(
                 paidPrincipal += lumpSumProjection.dollars;
                 paidPrincipalToday += lumpSumProjection.dollars;
                 tag = "projectedLumpSum";
-
-                // console.log(
-                //     day.toLocaleDateString(),
-                //     Math.round(interestAcc),
-                //     Math.round(paidPrincipalToday),
-                //     Math.round(remainingPrincipal),
-                //     Math.round(paidPrincipal),
-                //     tag
-                // );
             }
         }
 
@@ -147,6 +118,8 @@ export function run(
 
         // Advance the date.
         day.setDate(day.getDate() + 1);
+
+        if (optionalEndDate && day.getTime() > optionalEndDate.getTime()) break;
     }
 
     // console.table(records);
