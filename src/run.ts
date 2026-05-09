@@ -1,62 +1,154 @@
-import type Config from "./../config.json";
-import { calculateMonth } from "./calcMonth.js";
-import type {
-    ExtraPayments,
-    GraphPointData,
-    LoanState,
-    YearMonth,
-} from "./types.js";
+import { adjustForInflation } from "./inflation.js";
+
+const TODAYS_DATE = new Date();
+
+type DateRecord = {
+    day: Date;
+    remainingPrincipal: number;
+    paidPrincipal: number;
+    paidPrincipalAdjusted: number;
+    paidPrincipalToday: number;
+    interestAccrued: number;
+    paidInterest: number;
+    paidInterestAdjusted: number;
+    paidInterestToday: number;
+    tag: "" | "payment" | "lumpSum" | "projectedLumpSum";
+};
+
+type LumpSumProjection = {
+    startDate: Date;
+    paymentDate: number;
+    dollars: number;
+};
 
 export function run(
-    label: string,
-    loan: (typeof Config)["loan"],
-    extra: ExtraPayments,
-    inflationDate: Date,
-    optionalEndDate: YearMonth | null
-): GraphPointData[] {
-    let state: LoanState = {
-        year: loan.startYear,
-        month: loan.startMonth,
-        principalPaid: 0,
-        principalPaidAdjusted: 0,
-        interestPaid: 0,
-        interestPaidAdjusted: 0,
-        loan: loan,
-    };
-    const graphData: GraphPointData[] = [];
+    startDate: Date,
+    initialPrincipal: number,
+    interestRate: number,
+    monthlyPayment: number,
+    monthlyPaymentDay: number,
+    lumpSums: { date: Date; dollars: number }[],
+    lumpSumProjection: LumpSumProjection
+): DateRecord[] {
+    const day: Date = startDate;
+    const dailyInterest = interestRate / 365 / 100;
 
-    while (state.principalPaid < loan.principal) {
-        // We stop collecting data after our optional end date
-        if (optionalEndDate) {
-            if (state.year > optionalEndDate.year) break;
-            if (
-                state.year === optionalEndDate.year &&
-                state.month > optionalEndDate.month
-            )
-                break;
+    let remainingPrincipal = initialPrincipal;
+    let interestAcc = 0;
+    let paidPrincipal = 0;
+    let paidInterest = 0;
+    let paidPrincipalAdjusted = 0;
+    let paidInterestAdjusted = 0;
+    const records: DateRecord[] = [];
+
+    while (remainingPrincipal > 0) {
+        // Add to the interest accumulator
+        interestAcc += remainingPrincipal * dailyInterest;
+        const cachedInterest = interestAcc;
+
+        let tag: DateRecord["tag"] = "";
+        let paidPrincipalToday = 0;
+        let paidInterestToday = 0;
+
+        if (day.getDate() === monthlyPaymentDay) {
+            const todaysPayment = monthlyPayment - interestAcc;
+            paidInterest += interestAcc;
+            remainingPrincipal -= todaysPayment;
+            paidPrincipal += todaysPayment;
+
+            const inflInput = {
+                year: day.getFullYear(),
+                month: day.getMonth() + 1,
+            };
+            const inflTarget = {
+                year: TODAYS_DATE.getFullYear(),
+                month: TODAYS_DATE.getMonth() + 1,
+            };
+            paidPrincipalAdjusted += adjustForInflation({
+                input: {
+                    ...inflInput,
+                    dollars: todaysPayment,
+                },
+                target: inflTarget,
+            });
+            paidInterestAdjusted += adjustForInflation({
+                input: {
+                    ...inflInput,
+                    dollars: interestAcc,
+                },
+                target: inflTarget,
+            });
+
+            interestAcc = 0;
+            tag = "payment";
+
+            // console.log(
+            //     day.toLocaleDateString(),
+            //     Math.round(interestAcc),
+            //     Math.round(todaysPayment),
+            //     Math.round(remainingPrincipal),
+            //     Math.round(paidInterest),
+            //     Math.round(paidPrincipal),
+            //     Math.round(paidPrincipalAdjusted),
+            //     Math.round(paidInterestAdjusted),
+            //     tag
+            // );
         }
 
-        state = calculateMonth(state, extra, inflationDate);
+        for (const lumpSum of lumpSums) {
+            const sameDay =
+                day.toLocaleDateString() === lumpSum.date.toLocaleDateString();
+            if (!sameDay) continue;
+            remainingPrincipal -= lumpSum.dollars;
+            paidPrincipal += lumpSum.dollars;
+            paidPrincipalToday += lumpSum.dollars;
+            tag = "lumpSum";
 
-        graphData.push({
-            name: label,
-            date: new Date(state.year, state.month - 1, 1),
-            remainingPrincipal: loan.principal - state.principalPaid,
-            principalPaid: state.principalPaid,
-            principalPaidAdjusted: state.principalPaidAdjusted,
-            interestPaid: state.interestPaid,
-            interestPaidAdjusted: state.interestPaidAdjusted,
-            totalPaid: state.principalPaid + state.interestPaid,
-            totalPaidAdjusted:
-                state.principalPaidAdjusted + state.interestPaidAdjusted,
+            // console.log(
+            //     day.toLocaleDateString(),
+            //     Math.round(interestAcc),
+            //     Math.round(paidPrincipalToday),
+            //     Math.round(remainingPrincipal),
+            //     Math.round(paidPrincipal),
+            //     tag
+            // );
+        }
+
+        if (day.getTime() > lumpSumProjection.startDate.getTime()) {
+            if (day.getDate() === lumpSumProjection.paymentDate) {
+                remainingPrincipal -= lumpSumProjection.dollars;
+                paidPrincipal += lumpSumProjection.dollars;
+                paidPrincipalToday += lumpSumProjection.dollars;
+                tag = "projectedLumpSum";
+
+                // console.log(
+                //     day.toLocaleDateString(),
+                //     Math.round(interestAcc),
+                //     Math.round(paidPrincipalToday),
+                //     Math.round(remainingPrincipal),
+                //     Math.round(paidPrincipal),
+                //     tag
+                // );
+            }
+        }
+
+        records.push({
+            day: new Date(day),
+            remainingPrincipal,
+            paidPrincipal,
+            paidPrincipalToday,
+            paidInterest,
+            paidInterestToday,
+            interestAccrued: cachedInterest,
+            paidPrincipalAdjusted,
+            paidInterestAdjusted,
+            tag,
         });
 
-        state.month++;
-        if (state.month > 12) {
-            state.year++;
-            state.month -= 12;
-        }
+        // Advance the date.
+        day.setDate(day.getDate() + 1);
     }
 
-    return graphData;
+    // console.table(records);
+    return records;
 }
