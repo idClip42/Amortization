@@ -2,6 +2,7 @@ import type { compile } from "vega-lite";
 
 const width = 800;
 const height = 400;
+const INTERPOLATE: "monotone" | "linear" = "linear";
 
 type XYPoint = {
     x: Date;
@@ -44,7 +45,10 @@ export function makeLineChartSpec({
 
     const baseLayer = stackedFill
         ? ({
-              mark: { type: "area", interpolate: "monotone" },
+              mark: {
+                  type: "area",
+                  interpolate: INTERPOLATE,
+              },
               encoding: {
                   x: {
                       field: "x",
@@ -70,7 +74,10 @@ export function makeLineChartSpec({
               },
           } as const)
         : ({
-              mark: { type: "line", interpolate: "monotone" },
+              mark: {
+                  type: "line",
+                  interpolate: INTERPOLATE,
+              },
               encoding: {
                   x: {
                       field: "x",
