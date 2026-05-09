@@ -5,26 +5,30 @@
         "monthlyPayment": 1245.46,
         "monthlyEscrow": 381.98,
         "startYear": 2025,
-        "startMonth": 8
+        "startMonth": 8,
+        "paymentDay": 1
     },
-    "extraPayments": {
-        "lumpSums": [
-            [2025, 9, 15000],
-            [2025, 10, 31500],
-            [2025, 11, 4200],
-            [2025, 12, 1500],
-            [2026, 1, 0],
-            [2026, 2, 6000],
-            [2026, 3, 5500],
-            [2026, 4, 3000]
-        ],
-        "extraMonthlyOptions": [3200, 4200]
+    "lumpSums": [
+        ["September 4, 2025", 15000],
+        ["October 2, 2025", 1500],
+        ["October 8, 2025", 30000],
+        ["November 10, 2025", 4200],
+        ["December 10, 2025", 1500],
+        ["February 10, 2026", 6000],
+        ["March 11, 2026", 3000],
+        ["March 23, 2026", 2500],
+        ["April 10, 2026", 3000]
+    ],
+    "projectedLumpSums": {
+        "startDate": "May 1, 2026",
+        "paymentDay": 10,
+        "options": [3200, 4200]
     },
     "target": {
         "principal": 20000
     },
     "graphs": {
-        "includeRaw30Year": true,
+        "includeRaw30Year": false,
         "optionalEndDate": [2030, 1]
     },
     "inflation": {
