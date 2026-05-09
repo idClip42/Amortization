@@ -65,18 +65,23 @@ const dataSets = configs.map(cfg => {
 });
 
 const graphPointData: GraphPointData[] = dataSets.flatMap(ds =>
-    ds.data.map<GraphPointData>(data => ({
-        name: ds.name,
-        date: data.day,
-        remainingPrincipal: data.remainingPrincipal,
-        principalPaid: data.paidPrincipal,
-        principalPaidAdjusted: data.paidPrincipalAdjusted,
-        interestPaid: data.paidInterest,
-        interestPaidAdjusted: data.paidInterestAdjusted,
-        totalPaid: data.paidPrincipal + data.paidInterest,
-        totalPaidAdjusted:
-            data.paidPrincipalAdjusted + data.paidInterestAdjusted,
-    }))
+    ds.data
+        .filter(data => {
+            if (!config.graphs.skipUneventfulDays) return true;
+            return data.tag !== "";
+        })
+        .map<GraphPointData>(data => ({
+            name: ds.name,
+            date: data.day,
+            remainingPrincipal: data.remainingPrincipal,
+            principalPaid: data.paidPrincipal,
+            principalPaidAdjusted: data.paidPrincipalAdjusted,
+            interestPaid: data.paidInterest,
+            interestPaidAdjusted: data.paidInterestAdjusted,
+            totalPaid: data.paidPrincipal + data.paidInterest,
+            totalPaidAdjusted:
+                data.paidPrincipalAdjusted + data.paidInterestAdjusted,
+        }))
 );
 
 renderGraphs(graphPointData, config.loan, config.target.principal, new Date());

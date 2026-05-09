@@ -29,7 +29,8 @@
     },
     "graphs": {
         "includeRaw30Year": false,
-        "optionalEndDate": [2030, 1]
+        "optionalEndDate": [2030, 1],
+        "skipUneventfulDays": true
     },
     "inflation": {
         "estimatedRatePercentage": 2.5
