@@ -2,6 +2,7 @@ import config from "./config.json" with { type: "json" };
 import { renderGraphs } from "./src/render.js";
 import { run } from "./src/run.js";
 import { GraphPointData } from "./src/types.js";
+import fs from "fs";
 
 const runConfigs = (() => {
     const LUMP_SUMS = config.lumpSums.map(value => {
@@ -96,38 +97,36 @@ const graphEndDate: Date | null = (() => {
     return end;
 })();
 
-console.table(
-    dataSets.map(ds => {
-        const last = ds.data[ds.data.length - 1];
-        const target = ds.data.find(
-            d => d.remainingPrincipal < config.target.principal
+const table = dataSets.map(ds => {
+    const last = ds.data[ds.data.length - 1];
+    const target = ds.data.find(
+        d => d.remainingPrincipal < config.target.principal
+    );
+    if (!target) throw new Error("Could not find target date.");
+    const cutoff = (() => {
+        if (!graphEndDate) return null;
+        const endExclusiveIndex = ds.data.findIndex(
+            d => d.day.getTime() > graphEndDate?.getTime()
         );
-        if (!target) throw new Error("Could not find target date.");
-        const cutoff = (() => {
-            if (!graphEndDate) return null;
-            const endExclusiveIndex = ds.data.findIndex(
-                d => d.day.getTime() > graphEndDate?.getTime()
-            );
-            return ds.data[endExclusiveIndex - 1];
-        })();
+        return ds.data[endExclusiveIndex - 1];
+    })();
 
-        const interestPaid = Math.round(last.paidInterest * 100) / 100;
+    const interestPaid = Math.round(last.paidInterest * 100) / 100;
 
-        return {
-            Name: ds.name,
-            "End Date": last.day.toLocaleDateString(),
-            [`\$${config.target.principal} Date`]:
-                target?.day.toLocaleDateString(),
-            "Interest Paid ($)": interestPaid,
-            ...(graphEndDate && {
-                [`Interest Paid by ${graphEndDate?.toLocaleDateString()} (\$)`]:
-                    cutoff
-                        ? Math.round(cutoff.paidInterest * 100) / 100
-                        : interestPaid,
-            }),
-        };
-    })
-);
+    return {
+        Name: ds.name,
+        "End Date": last.day.toLocaleDateString(),
+        [`\$${config.target.principal} Date`]: target?.day.toLocaleDateString(),
+        "Interest Paid ($)": interestPaid,
+        ...(graphEndDate && {
+            [`Interest Paid by ${graphEndDate?.toLocaleDateString()} (\$)`]:
+                cutoff
+                    ? Math.round(cutoff.paidInterest * 100) / 100
+                    : interestPaid,
+        }),
+    };
+});
+console.table(table);
 
 const graphPointData: GraphPointData[] = dataSets.flatMap(ds =>
     ds.data
@@ -151,4 +150,11 @@ const graphPointData: GraphPointData[] = dataSets.flatMap(ds =>
         }))
 );
 
-renderGraphs(graphPointData, config.loan, config.target.principal, new Date());
+renderGraphs(
+    graphPointData,
+    config.loan,
+    config.target.principal,
+    new Date()
+).then(() =>
+    fs.promises.writeFile("output/report.json", JSON.stringify(table, null, 4))
+);
