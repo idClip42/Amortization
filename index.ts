@@ -132,10 +132,11 @@ console.table(table);
 const graphPointData: GraphPointData[] = dataSets.flatMap(ds =>
     ds.data
         .filter(data => {
-            if (!config.graphs.skipUneventfulDays) return true;
+            if (config.graphs.skipUneventfulDays && data.tag === "")
+                return false;
             if (graphEndDate && data.day.getTime() > graphEndDate.getTime())
                 return false;
-            return data.tag !== "";
+            return true;
         })
         .map<GraphPointData>(data => ({
             name: ds.name,
