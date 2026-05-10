@@ -3,62 +3,66 @@ import { renderGraphs } from "./src/render.js";
 import { run } from "./src/run.js";
 import { GraphPointData } from "./src/types.js";
 
-const LUMP_SUMS = config.lumpSums.map(value => {
-    const dateString = value[0];
-    if (typeof dateString !== "string")
-        throw new Error("Invalid lump sums type");
-    const dollars = value[1];
-    if (typeof dollars !== "number") throw new Error("Invalid lump sums type");
-    const date = new Date(dateString);
-    if (isNaN(date.getTime()))
-        throw new Error(`Invalid date string: ${dateString}`);
-    return {
-        date,
-        dollars,
-    };
-});
-
-const configs: {
-    name: string;
-    lumpSums: typeof LUMP_SUMS;
-    projectedLumpSumAmt: number;
-}[] = [];
-
-if (config.graphs.includeRaw30Year) {
-    configs.push({
-        name: "No Extra Payments",
-        lumpSums: [],
-        projectedLumpSumAmt: 0,
+const runConfigs = (() => {
+    const LUMP_SUMS = config.lumpSums.map(value => {
+        const dateString = value[0];
+        if (typeof dateString !== "string")
+            throw new Error("Invalid lump sums type");
+        const dollars = value[1];
+        if (typeof dollars !== "number")
+            throw new Error("Invalid lump sums type");
+        const date = new Date(dateString);
+        if (isNaN(date.getTime()))
+            throw new Error(`Invalid date string: ${dateString}`);
+        return {
+            date,
+            dollars,
+        };
     });
-}
 
-configs.push(
-    ...config.projectedLumpSums.options.map(pls => ({
-        name: `\$${pls}/month`,
-        lumpSums: LUMP_SUMS,
-        projectedLumpSumAmt: pls,
-    }))
-);
+    const result: {
+        name: string;
+        lumpSums: typeof LUMP_SUMS;
+        projectedLumpSumAmt: number;
+    }[] = [];
 
-if (config.projectedLumpSums.includeAverage) {
-    const startDate = new Date(config.projectedLumpSums.averageStartDate);
-    if (isNaN(startDate.getTime()))
-        throw new Error(`Invalid date string: ${startDate}`);
-    const lumpSumsToAvg = LUMP_SUMS.filter(
-        s => s.date.getTime() > startDate.getTime()
-    ).map(s => s.dollars);
-    const avgLumpSum = Math.round(
-        lumpSumsToAvg.reduce((acc, curr) => acc + curr, 0) /
-            lumpSumsToAvg.length
+    if (config.graphs.includeRaw30Year) {
+        result.push({
+            name: "No Extra Payments",
+            lumpSums: [],
+            projectedLumpSumAmt: 0,
+        });
+    }
+
+    result.push(
+        ...config.projectedLumpSums.options.map(pls => ({
+            name: `\$${pls}/month`,
+            lumpSums: LUMP_SUMS,
+            projectedLumpSumAmt: pls,
+        }))
     );
-    configs.push({
-        name: `\$${avgLumpSum}/month (Avg.)`,
-        lumpSums: LUMP_SUMS,
-        projectedLumpSumAmt: avgLumpSum,
-    });
-}
 
-const dataSets = configs.map(cfg => {
+    if (config.projectedLumpSums.includeAverage) {
+        const startDate = new Date(config.projectedLumpSums.averageStartDate);
+        if (isNaN(startDate.getTime()))
+            throw new Error(`Invalid date string: ${startDate}`);
+        const lumpSums = LUMP_SUMS.filter(
+            s => s.date.getTime() > startDate.getTime()
+        ).map(s => s.dollars);
+        const avgLumpSum = Math.round(
+            lumpSums.reduce((acc, curr) => acc + curr, 0) / lumpSums.length
+        );
+        result.push({
+            name: `\$${avgLumpSum}/month (Avg.)`,
+            lumpSums: LUMP_SUMS,
+            projectedLumpSumAmt: avgLumpSum,
+        });
+    }
+
+    return result;
+})();
+
+const dataSets = runConfigs.map(cfg => {
     const data = run(
         new Date(
             config.loan.startYear,
@@ -85,23 +89,42 @@ const dataSets = configs.map(cfg => {
     };
 });
 
+const graphEndDate: Date | null = (() => {
+    if (!config.graphs.optionalEndDate) return null;
+    const end = new Date(config.graphs.optionalEndDate);
+    if (isNaN(end.getTime())) throw new Error(`Invalid date string: ${end}`);
+    return end;
+})();
+
 console.table(
     dataSets.map(ds => {
         const last = ds.data[ds.data.length - 1];
         const target = ds.data.find(
-            ds => ds.remainingPrincipal < config.target.principal
+            d => d.remainingPrincipal < config.target.principal
         );
+        if (!target) throw new Error("Could not find target date.");
+        const cutoff = (() => {
+            if (!graphEndDate) return null;
+            const endExclusiveIndex = ds.data.findIndex(
+                d => d.day.getTime() > graphEndDate?.getTime()
+            );
+            return ds.data[endExclusiveIndex - 1];
+        })();
+
+        const interestPaid = Math.round(last.paidInterest * 100) / 100;
+
         return {
             Name: ds.name,
             "End Date": last.day.toLocaleDateString(),
-            "Target Date": target?.day.toLocaleDateString(),
-            "Interest Paid ($)": Math.round(last.paidInterest * 100) / 100,
-            Payments: ds.data.filter(d => d.tag === "payment").length,
-            "Lump Sums": ds.data.filter(
-                d =>
-                    (d.tag === "lumpSum" || d.tag === "projectedLumpSum") &&
-                    d.paidPrincipalToday > 0
-            ).length,
+            [`\$${config.target.principal} Date`]:
+                target?.day.toLocaleDateString(),
+            "Interest Paid ($)": interestPaid,
+            ...(graphEndDate && {
+                [`Interest Paid by ${graphEndDate?.toLocaleDateString()} (\$)`]:
+                    cutoff
+                        ? Math.round(cutoff.paidInterest * 100) / 100
+                        : interestPaid,
+            }),
         };
     })
 );
@@ -110,12 +133,8 @@ const graphPointData: GraphPointData[] = dataSets.flatMap(ds =>
     ds.data
         .filter(data => {
             if (!config.graphs.skipUneventfulDays) return true;
-            if (config.graphs.optionalEndDate) {
-                const end = new Date(config.graphs.optionalEndDate);
-                if (isNaN(end.getTime()))
-                    throw new Error(`Invalid date string: ${end}`);
-                if (data.day.getTime() > end.getTime()) return false;
-            }
+            if (graphEndDate && data.day.getTime() > graphEndDate.getTime())
+                return false;
             return data.tag !== "";
         })
         .map<GraphPointData>(data => ({
