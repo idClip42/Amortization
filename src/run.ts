@@ -51,20 +51,21 @@ export function run(
         let paidPrincipalToday = 0;
         let paidInterestToday = 0;
 
+        const inflInput = {
+            year: day.getFullYear(),
+            month: day.getMonth() + 1,
+        };
+        const inflTarget = {
+            year: TODAYS_DATE.getFullYear(),
+            month: TODAYS_DATE.getMonth() + 1,
+        };
+
         if (day.getDate() === monthlyPaymentDay) {
             const todaysPayment = monthlyPayment - interestAcc;
             paidInterest += interestAcc;
             remainingPrincipal -= todaysPayment;
             paidPrincipal += todaysPayment;
 
-            const inflInput = {
-                year: day.getFullYear(),
-                month: day.getMonth() + 1,
-            };
-            const inflTarget = {
-                year: TODAYS_DATE.getFullYear(),
-                month: TODAYS_DATE.getMonth() + 1,
-            };
             paidPrincipalAdjusted += adjustForInflation({
                 input: {
                     ...inflInput,
@@ -91,6 +92,13 @@ export function run(
             remainingPrincipal -= lumpSum.dollars;
             paidPrincipal += lumpSum.dollars;
             paidPrincipalToday += lumpSum.dollars;
+            paidPrincipalAdjusted += adjustForInflation({
+                input: {
+                    ...inflInput,
+                    dollars: lumpSum.dollars,
+                },
+                target: inflTarget,
+            });
             tag = "lumpSum";
         }
 
@@ -99,6 +107,13 @@ export function run(
                 remainingPrincipal -= lumpSumProjection.dollars;
                 paidPrincipal += lumpSumProjection.dollars;
                 paidPrincipalToday += lumpSumProjection.dollars;
+                paidPrincipalAdjusted += adjustForInflation({
+                    input: {
+                        ...inflInput,
+                        dollars: lumpSumProjection.dollars,
+                    },
+                    target: inflTarget,
+                });
                 tag = "projectedLumpSum";
             }
         }
