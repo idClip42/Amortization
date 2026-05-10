@@ -23,12 +23,15 @@ const configs: {
     lumpSums: typeof LUMP_SUMS;
     projectedLumpSumAmt: number;
 }[] = [];
-if (config.graphs.includeRaw30Year)
+
+if (config.graphs.includeRaw30Year) {
     configs.push({
         name: "No Extra Payments",
         lumpSums: [],
         projectedLumpSumAmt: 0,
     });
+}
+
 configs.push(
     ...config.projectedLumpSums.options.map(pls => ({
         name: `\$${pls}/month`,
@@ -36,6 +39,24 @@ configs.push(
         projectedLumpSumAmt: pls,
     }))
 );
+
+if (config.projectedLumpSums.includeAverage) {
+    const startDate = new Date(config.projectedLumpSums.averageStartDate);
+    if (isNaN(startDate.getTime()))
+        throw new Error(`Invalid date string: ${startDate}`);
+    const lumpSumsToAvg = LUMP_SUMS.filter(
+        s => s.date.getTime() > startDate.getTime()
+    ).map(s => s.dollars);
+    const avgLumpSum = Math.round(
+        lumpSumsToAvg.reduce((acc, curr) => acc + curr, 0) /
+            lumpSumsToAvg.length
+    );
+    configs.push({
+        name: `Average (\$${avgLumpSum}/month)`,
+        lumpSums: LUMP_SUMS,
+        projectedLumpSumAmt: avgLumpSum,
+    });
+}
 
 const dataSets = configs.map(cfg => {
     const data = run(

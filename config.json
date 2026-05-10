@@ -23,7 +23,9 @@
     "projectedLumpSums": {
         "startDate": "June 1, 2026",
         "paymentDay": 10,
-        "options": [3200, 4200]
+        "options": [3200, 4200],
+        "includeAverage": true,
+        "averageStartDate": "November 1, 2025"
     },
     "target": {
         "principal": 20000
