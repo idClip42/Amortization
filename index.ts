@@ -3,6 +3,7 @@ import { renderGraphs } from "./src/render.js";
 import { run } from "./src/run.js";
 import { GraphPointData } from "./src/types.js";
 import fs from "fs";
+import path from "path";
 
 const runConfigs = (() => {
     const LUMP_SUMS = config.lumpSums.map(value => {
@@ -150,11 +151,21 @@ const graphPointData: GraphPointData[] = dataSets.flatMap(ds =>
         }))
 );
 
-renderGraphs(
-    graphPointData,
-    config.loan,
-    config.target.principal,
-    new Date()
-).then(() =>
-    fs.promises.writeFile("output/report.json", JSON.stringify(table, null, 4))
-);
+fs.promises
+    .rm(config.output.folder, { recursive: true, force: true })
+    .then(() => fs.promises.mkdir(config.output.folder))
+    .then(() =>
+        renderGraphs(
+            graphPointData,
+            config.loan,
+            config.target.principal,
+            new Date(),
+            config.output.folder
+        )
+    )
+    .then(() =>
+        fs.promises.writeFile(
+            path.join(config.output.folder, "report.json"),
+            JSON.stringify(table, null, 4)
+        )
+    );

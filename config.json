@@ -37,5 +37,8 @@
     },
     "inflation": {
         "estimatedRatePercentage": 2.5
+    },
+    "output": {
+        "folder": "output"
     }
 }

@@ -7,20 +7,6 @@ import { makeLineChartSpec, type Series } from "./makeLineChartSpec.js";
 import type Config from "./../config.json";
 import { toSafeFilename } from "./utils.js";
 
-async function clearOldFiles(): Promise<void> {
-    const dirsToClear = [
-        "./output/nominal/per-dataset",
-        "./output/real-adjusted/per-dataset",
-    ];
-    for (const dir of dirsToClear) {
-        if (!fs.existsSync(dir)) continue;
-        const files = await fs.promises.readdir(dir);
-        for (const filename of files) {
-            await fs.promises.rm(path.join(dir, filename));
-        }
-    }
-}
-
 async function renderSvg(
     spec: Parameters<typeof compile>[0],
     outputPath: string
@@ -55,12 +41,11 @@ export async function renderGraphs(
     data: GraphPointData[],
     loan: (typeof Config)["loan"],
     targetPrincipal: number,
-    inflationDate: Date
+    inflationDate: Date,
+    outputFolder: string
 ): Promise<void> {
     const renderPromises: Promise<void>[] = [];
     const datasetNames = [...new Set(data.map(d => d.name))];
-
-    await clearOldFiles();
 
     // REMAINING PRINCIPAL
 
@@ -73,7 +58,7 @@ export async function renderGraphs(
     renderPromises.push(
         renderSvg(
             principalRemainingSpec,
-            "./output/nominal/principal_remaining.svg"
+            path.join(outputFolder, "nominal/principal_remaining.svg")
         )
     );
 
@@ -86,7 +71,10 @@ export async function renderGraphs(
         horizRule: 0,
     });
     renderPromises.push(
-        renderSvg(interestSpec, "./output/nominal/interest_paid.svg")
+        renderSvg(
+            interestSpec,
+            path.join(outputFolder, "nominal/interest_paid.svg")
+        )
     );
 
     const principalPaidSpec = makeLineChartSpec({
@@ -96,7 +84,10 @@ export async function renderGraphs(
         horizRule: loan.principal,
     });
     renderPromises.push(
-        renderSvg(principalPaidSpec, "./output/nominal/principal_paid.svg")
+        renderSvg(
+            principalPaidSpec,
+            path.join(outputFolder, "nominal/principal_paid.svg")
+        )
     );
 
     const totalPaidSpec = makeLineChartSpec({
@@ -106,7 +97,10 @@ export async function renderGraphs(
         horizRule: loan.principal,
     });
     renderPromises.push(
-        renderSvg(totalPaidSpec, "./output/nominal/total_paid.svg")
+        renderSvg(
+            totalPaidSpec,
+            path.join(outputFolder, "nominal/total_paid.svg")
+        )
     );
 
     for (const datasetName of datasetNames) {
@@ -136,7 +130,10 @@ export async function renderGraphs(
         renderPromises.push(
             renderSvg(
                 pAndISpec,
-                `./output/nominal/per-dataset/${toSafeFilename(datasetName)}.svg`
+                path.join(
+                    outputFolder,
+                    `nominal/per-dataset/${toSafeFilename(datasetName)}.svg`
+                )
             )
         );
     }
@@ -150,7 +147,10 @@ export async function renderGraphs(
         horizRule: 0,
     });
     renderPromises.push(
-        renderSvg(interestAdjSpec, "./output/real-adjusted/interest_paid.svg")
+        renderSvg(
+            interestAdjSpec,
+            path.join(outputFolder, "real-adjusted/interest_paid.svg")
+        )
     );
 
     const principalPaidAdjSpec = makeLineChartSpec({
@@ -162,7 +162,7 @@ export async function renderGraphs(
     renderPromises.push(
         renderSvg(
             principalPaidAdjSpec,
-            "./output/real-adjusted/principal_paid.svg"
+            path.join(outputFolder, "real-adjusted/principal_paid.svg")
         )
     );
 
@@ -173,7 +173,10 @@ export async function renderGraphs(
         horizRule: 0,
     });
     renderPromises.push(
-        renderSvg(totalPaidAdjSpec, "./output/real-adjusted/total_paid.svg")
+        renderSvg(
+            totalPaidAdjSpec,
+            path.join(outputFolder, "real-adjusted/total_paid.svg")
+        )
     );
 
     for (const datasetName of datasetNames) {
@@ -203,7 +206,10 @@ export async function renderGraphs(
         renderPromises.push(
             renderSvg(
                 pAndISpec,
-                `./output/real-adjusted/per-dataset/${toSafeFilename(datasetName)}.svg`
+                path.join(
+                    outputFolder,
+                    `real-adjusted/per-dataset/${toSafeFilename(datasetName)}.svg`
+                )
             )
         );
     }
