@@ -164,9 +164,14 @@ fs.promises
             config.output.folder
         )
     )
-    .then(() =>
-        fs.promises.writeFile(
+    .then(() => {
+        const dataPromise = fs.promises.writeFile(
+            path.join(config.output.folder, "data.json"),
+            JSON.stringify(dataSets, null, 4)
+        );
+        const reportPromise = fs.promises.writeFile(
             path.join(config.output.folder, "report.json"),
             JSON.stringify(table, null, 4)
-        )
-    );
+        );
+        return Promise.all([dataPromise, reportPromise]);
+    });
