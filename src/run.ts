@@ -23,7 +23,6 @@ type LumpSumProjection = {
 
 export function run(
     startDate: Date,
-    optionalEndDate: Date | null,
     initialPrincipal: number,
     interestRate: number,
     monthlyPayment: number,
@@ -133,8 +132,6 @@ export function run(
 
         // Advance the date.
         day.setDate(day.getDate() + 1);
-
-        if (optionalEndDate && day.getTime() > optionalEndDate.getTime()) break;
     }
 
     // console.table(records);

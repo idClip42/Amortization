@@ -52,7 +52,7 @@ if (config.projectedLumpSums.includeAverage) {
             lumpSumsToAvg.length
     );
     configs.push({
-        name: `Average (\$${avgLumpSum}/month)`,
+        name: `\$${avgLumpSum}/month (Avg.)`,
         lumpSums: LUMP_SUMS,
         projectedLumpSumAmt: avgLumpSum,
     });
@@ -68,9 +68,6 @@ const dataSets = configs.map(cfg => {
             // but wait til next month to make a payment.
             config.loan.paymentDay + 1
         ),
-        config.graphs.optionalEndDate
-            ? new Date(config.graphs.optionalEndDate)
-            : null,
         config.loan.principal,
         config.loan.interest,
         config.loan.monthlyPayment - config.loan.monthlyEscrow,
@@ -88,10 +85,37 @@ const dataSets = configs.map(cfg => {
     };
 });
 
+console.table(
+    dataSets.map(ds => {
+        const last = ds.data[ds.data.length - 1];
+        const target = ds.data.find(
+            ds => ds.remainingPrincipal < config.target.principal
+        );
+        return {
+            Name: ds.name,
+            "End Date": last.day.toLocaleDateString(),
+            "Target Date": target?.day.toLocaleDateString(),
+            "Interest Paid ($)": Math.round(last.paidInterest * 100) / 100,
+            Payments: ds.data.filter(d => d.tag === "payment").length,
+            "Lump Sums": ds.data.filter(
+                d =>
+                    (d.tag === "lumpSum" || d.tag === "projectedLumpSum") &&
+                    d.paidPrincipalToday > 0
+            ).length,
+        };
+    })
+);
+
 const graphPointData: GraphPointData[] = dataSets.flatMap(ds =>
     ds.data
         .filter(data => {
             if (!config.graphs.skipUneventfulDays) return true;
+            if (config.graphs.optionalEndDate) {
+                const end = new Date(config.graphs.optionalEndDate);
+                if (isNaN(end.getTime()))
+                    throw new Error(`Invalid date string: ${end}`);
+                if (data.day.getTime() > end.getTime()) return false;
+            }
             return data.tag !== "";
         })
         .map<GraphPointData>(data => ({
