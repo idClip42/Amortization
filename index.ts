@@ -5,6 +5,21 @@ import { GraphPointData } from "./src/types.js";
 import fs from "fs";
 import path from "path";
 
+const monthlyTowardLoan =
+    config.loan.monthlyPayment - config.loan.monthlyEscrow;
+
+console.table([
+    {
+        Start: new Date(
+            config.loan.startYear,
+            config.loan.startMonth - 1
+        ).toLocaleDateString(),
+        "Principal ($)": config.loan.principal,
+        "Interest (%)": config.loan.interest,
+        "Monthly ($)": monthlyTowardLoan,
+    },
+]);
+
 const runConfigs = (() => {
     const LUMP_SUMS = config.lumpSums.map(value => {
         const dateString = value[0];
@@ -21,6 +36,17 @@ const runConfigs = (() => {
             dollars,
         };
     });
+    console.log("Lump Sums");
+    console.table(
+        LUMP_SUMS.map(s => ({
+            Date: s.date.toLocaleDateString(),
+            Dollars: s.dollars,
+        }))
+    );
+    console.log(
+        "Total Lump Sum:",
+        LUMP_SUMS.map(ls => ls.dollars).reduce((acc, curr) => curr + acc, 0)
+    );
 
     const result: {
         name: string;
@@ -45,20 +71,18 @@ const runConfigs = (() => {
     );
 
     if (config.projectedLumpSums.includeAverage) {
-        console.log("Calculating average lump sum...");
         const startDate = new Date(config.projectedLumpSums.averageStartDate);
+        console.log(
+            `Calculating average lump sum after ${startDate.toLocaleDateString()}...`
+        );
         if (isNaN(startDate.getTime()))
             throw new Error(`Invalid date string: ${startDate}`);
 
         const lumpSumDatas = LUMP_SUMS.filter(
             s => s.date.getTime() > startDate.getTime()
         );
-        console.table(
-            lumpSumDatas.map(d => ({
-                Date: d.date.toLocaleDateString(),
-                Dollars: d.dollars,
-            }))
-        );
+        for (const d of lumpSumDatas)
+            console.log("-", d.date.toLocaleDateString(), d.dollars);
 
         const monthCountInclusive = (() => {
             const start = lumpSumDatas[0].date;
@@ -67,7 +91,9 @@ const runConfigs = (() => {
             const monthMonths = end.getMonth() - start.getMonth();
             return yearMonths + monthMonths + 1;
         })();
-        console.log(`${monthCountInclusive} months.`);
+        console.log(
+            `${monthCountInclusive} months, ${lumpSumDatas.length} lump sums.`
+        );
 
         const lumpSums = lumpSumDatas.map(s => s.dollars);
         const lumpSumsSum = lumpSums.reduce((acc, curr) => acc + curr, 0);
@@ -96,7 +122,7 @@ const dataSets = runConfigs.map(cfg => {
         ),
         config.loan.principal,
         config.loan.interest,
-        config.loan.monthlyPayment - config.loan.monthlyEscrow,
+        monthlyTowardLoan,
         config.loan.paymentDay,
         cfg.lumpSums,
         {
