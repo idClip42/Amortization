@@ -45,15 +45,35 @@ const runConfigs = (() => {
     );
 
     if (config.projectedLumpSums.includeAverage) {
+        console.log("Calculating average lump sum...");
         const startDate = new Date(config.projectedLumpSums.averageStartDate);
         if (isNaN(startDate.getTime()))
             throw new Error(`Invalid date string: ${startDate}`);
-        const lumpSums = LUMP_SUMS.filter(
+
+        const lumpSumDatas = LUMP_SUMS.filter(
             s => s.date.getTime() > startDate.getTime()
-        ).map(s => s.dollars);
-        const avgLumpSum = Math.round(
-            lumpSums.reduce((acc, curr) => acc + curr, 0) / lumpSums.length
         );
+        console.table(
+            lumpSumDatas.map(d => ({
+                Date: d.date.toLocaleDateString(),
+                Dollars: d.dollars,
+            }))
+        );
+
+        const monthCountInclusive = (() => {
+            const start = lumpSumDatas[0].date;
+            const end = lumpSumDatas[lumpSumDatas.length - 1].date;
+            const yearMonths = (end.getFullYear() - start.getFullYear()) * 12;
+            const monthMonths = end.getMonth() - start.getMonth();
+            return yearMonths + monthMonths + 1;
+        })();
+        console.log(`${monthCountInclusive} months.`);
+
+        const lumpSums = lumpSumDatas.map(s => s.dollars);
+        const lumpSumsSum = lumpSums.reduce((acc, curr) => acc + curr, 0);
+        const avgLumpSum = Math.round(lumpSumsSum / monthCountInclusive);
+        console.log(`Average lump sum: \$${avgLumpSum}`);
+
         result.push({
             name: `\$${avgLumpSum}/month (Avg.)`,
             lumpSums: LUMP_SUMS,
