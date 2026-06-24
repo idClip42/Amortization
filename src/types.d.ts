@@ -25,8 +25,11 @@ export type GraphPointData = {
     remainingPrincipal: number;
     principalPaid: number;
     principalPaidAdjusted: number;
+    principalPaidToday: number;
     interestPaid: number;
     interestPaidAdjusted: number;
+    interestPaidToday: number;
     totalPaid: number;
     totalPaidAdjusted: number;
+    tag: "" | "payment" | "lumpSum" | "projectedLumpSum";
 };

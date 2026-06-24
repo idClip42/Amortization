@@ -190,11 +190,14 @@ const graphPointData: GraphPointData[] = dataSets.flatMap(ds =>
             remainingPrincipal: data.remainingPrincipal,
             principalPaid: data.paidPrincipal,
             principalPaidAdjusted: data.paidPrincipalAdjusted,
+            principalPaidToday: data.paidPrincipalToday,
             interestPaid: data.paidInterest,
             interestPaidAdjusted: data.paidInterestAdjusted,
+            interestPaidToday: data.paidInterestToday,
             totalPaid: data.paidPrincipal + data.paidInterest,
             totalPaidAdjusted:
                 data.paidPrincipalAdjusted + data.paidInterestAdjusted,
+            tag: data.tag,
         }))
 );
 

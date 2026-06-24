@@ -136,6 +136,41 @@ export async function renderGraphs(
                 )
             )
         );
+
+        const filteredToMonthlyPayments = setData.filter(
+            d => d.tag === "payment"
+        );
+        const monthlyPandIRatio = makeLineChartSpec({
+            title: `Monthly Payment Principal vs. Interest (nominal dollars) ("${datasetName}")`,
+            series: [
+                {
+                    name: "Principal",
+                    data: filteredToMonthlyPayments.map(d => ({
+                        x: d.date,
+                        y: d.principalPaidToday,
+                    })),
+                },
+                {
+                    name: "Interest",
+                    data: filteredToMonthlyPayments.map(d => ({
+                        x: d.date,
+                        y: d.interestPaidToday,
+                    })),
+                },
+            ],
+            yTitle: "Monthly payment ($)",
+            horizRule: 0,
+            stackedFill: true,
+        });
+        renderPromises.push(
+            renderSvg(
+                monthlyPandIRatio,
+                path.join(
+                    outputFolder,
+                    `nominal/per-dataset/${toSafeFilename(datasetName)}-monthly-ratio.svg`
+                )
+            )
+        );
     }
 
     // AMOUNT PAID (ADJUSTED)

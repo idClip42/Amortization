@@ -61,9 +61,13 @@ export function run(
 
         if (day.getDate() === monthlyPaymentDay) {
             const todaysPayment = monthlyPayment - interestAcc;
-            paidInterest += interestAcc;
-            remainingPrincipal -= todaysPayment;
-            paidPrincipal += todaysPayment;
+
+            paidPrincipalToday = todaysPayment;
+            paidInterestToday = interestAcc;
+
+            paidInterest += paidInterestToday;
+            remainingPrincipal -= paidPrincipalToday;
+            paidPrincipal += paidPrincipalToday;
 
             paidPrincipalAdjusted += adjustForInflation({
                 input: {
