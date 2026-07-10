@@ -26,11 +26,26 @@ type Input = {
 };
 
 type PointLabel = {
-    x: Date;
+    x?: Date;
+    y?: number;
     labelExpression: string;
 };
 
-function findClosestPoint(referenceX: Date, points: XYPoint[]): XYPoint {
+function findClosestXPoint(referenceY: number, points: XYPoint[]): XYPoint {
+    if (points.length === 0) throw new Error("No points!");
+    let closest: XYPoint = points[0];
+    let closestDist: number = Number.MAX_VALUE;
+    for (const pt of points) {
+        let dist = Math.abs(referenceY - pt.y);
+        if (dist < closestDist) {
+            closest = pt;
+            closestDist = dist;
+        }
+    }
+    return closest;
+}
+
+function findClosestYPoint(referenceX: Date, points: XYPoint[]): XYPoint {
     if (points.length === 0) throw new Error("No points!");
     let closest: XYPoint = points[0];
     let closestDist: number = Number.MAX_VALUE;
@@ -64,11 +79,21 @@ export function makeLineChartSpec({
     pointLabels = [],
 }: Input): Parameters<typeof compile>[0] {
     const values = flattenSeries(series);
-    const pointLabelData = pointLabels.map(pl => ({
-        x: pl.x,
-        y: findClosestPoint(pl.x, values).y,
-        labelExpression: pl.labelExpression,
-    }));
+    const pointLabelData = pointLabels.map(pl => {
+        if (pl.x === undefined && pl.y === undefined)
+            throw new Error("Undefined x and y");
+
+        const x =
+            pl.x !== undefined ? pl.x : findClosestXPoint(pl.y!, values).x;
+        const y =
+            pl.y !== undefined ? pl.y : findClosestYPoint(pl.x!, values).y;
+
+        return {
+            x: x,
+            y: y,
+            labelExpression: pl.labelExpression,
+        };
+    });
 
     const baseLayer = stackedFill
         ? ({
