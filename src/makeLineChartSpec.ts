@@ -79,21 +79,6 @@ export function makeLineChartSpec({
     pointLabels = [],
 }: Input): Parameters<typeof compile>[0] {
     const values = flattenSeries(series);
-    const pointLabelData = pointLabels.map(pl => {
-        if (pl.x === undefined && pl.y === undefined)
-            throw new Error("Undefined x and y");
-
-        const x =
-            pl.x !== undefined ? pl.x : findClosestXPoint(pl.y!, values).x;
-        const y =
-            pl.y !== undefined ? pl.y : findClosestYPoint(pl.x!, values).y;
-
-        return {
-            x: x,
-            y: y,
-            labelExpression: pl.labelExpression,
-        };
-    });
 
     const baseLayer = stackedFill
         ? ({
@@ -205,43 +190,104 @@ export function makeLineChartSpec({
                     },
                 },
             },
-            {
-                data: {
-                    values: pointLabelData,
-                },
-                mark: {
-                    type: "point" as const,
-                    filled: true,
-                    size: 100,
-                    color: "red",
-                },
-                encoding: {
-                    x: { field: "x", type: "temporal" as const },
-                    y: { field: "y", type: "quantitative" as const },
-                },
-            },
-            ...pointLabelData.map(pl => ({
-                transform: [
+            ...series.flatMap(s => {
+                const pointLabelData = pointLabels.map(pl => {
+                    if (pl.x === undefined && pl.y === undefined)
+                        throw new Error("Undefined x and y");
+
+                    const x =
+                        pl.x !== undefined
+                            ? pl.x
+                            : findClosestXPoint(pl.y!, s.data).x;
+                    const y =
+                        pl.y !== undefined
+                            ? pl.y
+                            : findClosestYPoint(pl.x!, s.data).y;
+
+                    return {
+                        x: x,
+                        y: y,
+                        labelExpression: pl.labelExpression,
+                    };
+                });
+
+                return [
                     {
-                        calculate: pl.labelExpression,
-                        as: "label" as const,
+                        data: {
+                            values: pointLabelData,
+                        },
+                        mark: {
+                            type: "point" as const,
+                            filled: true,
+                            size: 100,
+                            color: "red",
+                        },
+                        encoding: {
+                            x: { field: "x", type: "temporal" as const },
+                            y: { field: "y", type: "quantitative" as const },
+                        },
                     },
-                ],
-                data: {
-                    values: [pl],
-                },
-                mark: {
-                    type: "text" as const,
-                    dx: 12,
-                    dy: -12,
-                    color: "red",
-                },
-                encoding: {
-                    x: { field: "x", type: "temporal" as const },
-                    y: { field: "y", type: "quantitative" as const },
-                    text: { field: "label" },
-                },
-            })),
+                    ...pointLabelData.map(pl => ({
+                        transform: [
+                            {
+                                calculate: pl.labelExpression,
+                                as: "label" as const,
+                            },
+                        ],
+                        data: {
+                            values: [pl],
+                        },
+                        mark: {
+                            type: "text" as const,
+                            dx: 12,
+                            dy: -12,
+                            color: "red",
+                        },
+                        encoding: {
+                            x: { field: "x", type: "temporal" as const },
+                            y: { field: "y", type: "quantitative" as const },
+                            text: { field: "label" },
+                        },
+                    })),
+                ];
+            }),
+            // {
+            //     data: {
+            //         values: pointLabelData,
+            //     },
+            //     mark: {
+            //         type: "point" as const,
+            //         filled: true,
+            //         size: 100,
+            //         color: "red",
+            //     },
+            //     encoding: {
+            //         x: { field: "x", type: "temporal" as const },
+            //         y: { field: "y", type: "quantitative" as const },
+            //     },
+            // },
+            // ...pointLabelData.map(pl => ({
+            //     transform: [
+            //         {
+            //             calculate: pl.labelExpression,
+            //             as: "label" as const,
+            //         },
+            //     ],
+            //     data: {
+            //         values: [pl],
+            //     },
+            //     mark: {
+            //         type: "text" as const,
+            //         dx: 12,
+            //         dy: -12,
+            //         color: "red",
+            //     },
+            //     encoding: {
+            //         x: { field: "x", type: "temporal" as const },
+            //         y: { field: "y", type: "quantitative" as const },
+            //         text: { field: "label" },
+            //     },
+            // })),
         ],
     };
 }
