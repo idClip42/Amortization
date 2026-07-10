@@ -1,4 +1,5 @@
 import type { compile } from "vega-lite";
+import CONFIG from "./../config.json" with { type: "json" };
 
 const width = 800;
 const height = 400;
@@ -242,7 +243,7 @@ export function makeLineChartSpec({
                             dx: 12,
                             dy: -12,
                             color: "red",
-                            fontSize: 6,
+                            fontSize: CONFIG.graphs.labelFontSize,
                         },
                         encoding: {
                             x: { field: "x", type: "temporal" as const },
