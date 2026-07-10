@@ -54,6 +54,12 @@ export async function renderGraphs(
         series: quickSeriesUtil(data, "remainingPrincipal"),
         yTitle: "Remaining Principal ($)",
         horizRule: targetPrincipal,
+        pointLabels: [
+            {
+                x: new Date(),
+                labelExpression: "'$' + round(datum.y)",
+            },
+        ],
     });
     renderPromises.push(
         renderSvg(

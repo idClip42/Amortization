@@ -22,7 +22,28 @@ type Input = {
     horizRule: number;
     /** Fill between stacked series (area chart style) */
     stackedFill?: boolean;
+    pointLabels?: PointLabel[];
 };
+
+type PointLabel = {
+    x: Date;
+    labelExpression: string;
+};
+
+function findClosestPoint(referenceX: Date, points: XYPoint[]): XYPoint {
+    if (points.length === 0) throw new Error("No points!");
+    let closest: XYPoint = points[0];
+    let closestDist: number = Number.MAX_VALUE;
+    const refXNum = referenceX.getTime();
+    for (const pt of points) {
+        let dist = Math.abs(refXNum - pt.x.getTime());
+        if (dist < closestDist) {
+            closest = pt;
+            closestDist = dist;
+        }
+    }
+    return closest;
+}
 
 function flattenSeries(series: Series[]) {
     return series.flatMap(s =>
@@ -40,8 +61,14 @@ export function makeLineChartSpec({
     yTitle,
     horizRule,
     stackedFill = false,
+    pointLabels = [],
 }: Input): Parameters<typeof compile>[0] {
     const values = flattenSeries(series);
+    const pointLabelData = pointLabels.map(pl => ({
+        x: pl.x,
+        y: findClosestPoint(pl.x, values).y,
+        labelExpression: pl.labelExpression,
+    }));
 
     const baseLayer = stackedFill
         ? ({
@@ -153,6 +180,43 @@ export function makeLineChartSpec({
                     },
                 },
             },
+            {
+                data: {
+                    values: pointLabelData,
+                },
+                mark: {
+                    type: "point" as const,
+                    filled: true,
+                    size: 100,
+                    color: "red",
+                },
+                encoding: {
+                    x: { field: "x", type: "temporal" as const },
+                    y: { field: "y", type: "quantitative" as const },
+                },
+            },
+            ...pointLabelData.map(pl => ({
+                transform: [
+                    {
+                        calculate: pl.labelExpression,
+                        as: "label" as const,
+                    },
+                ],
+                data: {
+                    values: [pl],
+                },
+                mark: {
+                    type: "text" as const,
+                    dx: 12,
+                    dy: -12,
+                    color: "red",
+                },
+                encoding: {
+                    x: { field: "x", type: "temporal" as const },
+                    y: { field: "y", type: "quantitative" as const },
+                    text: { field: "label" },
+                },
+            })),
         ],
     };
 }
