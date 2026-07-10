@@ -5,6 +5,12 @@ import { GraphPointData } from "./src/types.js";
 import fs from "fs";
 import path from "path";
 
+if (new Date(config.projectedLumpSums.startDate).getTime() < Date.now()) {
+    throw new Error(
+        `Projected lump sum date ${config.projectedLumpSums.startDate} is before today.`
+    );
+}
+
 const monthlyTowardLoan =
     config.loan.monthlyPayment - config.loan.monthlyEscrow;
 

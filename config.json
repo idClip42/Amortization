@@ -19,10 +19,11 @@
         ["March 23, 2026", 2500],
         ["April 10, 2026", 3000],
         ["May 11, 2026", 3300],
-        ["June 10, 2026", 3000]
+        ["June 10, 2026", 3000],
+        ["July 10, 2026", 3500]
     ],
     "projectedLumpSums": {
-        "startDate": "June 1, 2026",
+        "startDate": "August 1, 2026",
         "paymentDay": 10,
         "options": [3200, 4200],
         "includeAverage": true,
