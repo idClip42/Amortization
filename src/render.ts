@@ -59,6 +59,10 @@ export async function renderGraphs(
                 x: new Date(),
                 labelExpression: "'$' + round(datum.y)",
             },
+            {
+                y: 20000,
+                labelExpression: "timeFormat(datum.x, '%b %d, %Y')",
+            },
         ],
     });
     renderPromises.push(
