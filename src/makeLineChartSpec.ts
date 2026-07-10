@@ -242,6 +242,7 @@ export function makeLineChartSpec({
                             dx: 12,
                             dy: -12,
                             color: "red",
+                            fontSize: 6,
                         },
                         encoding: {
                             x: { field: "x", type: "temporal" as const },
