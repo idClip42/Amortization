@@ -61,7 +61,8 @@ export async function renderGraphs(
             },
             {
                 y: 20000,
-                labelExpression: "timeFormat(datum.x, '%b %d, %Y')",
+                // labelExpression: "timeFormat(datum.x, '%b %d, %Y')",
+                labelExpression: "timeFormat(datum.x, '%b %Y')",
             },
         ],
     });
