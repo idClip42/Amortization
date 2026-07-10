@@ -251,43 +251,6 @@ export function makeLineChartSpec({
                     })),
                 ];
             }),
-            // {
-            //     data: {
-            //         values: pointLabelData,
-            //     },
-            //     mark: {
-            //         type: "point" as const,
-            //         filled: true,
-            //         size: 100,
-            //         color: "red",
-            //     },
-            //     encoding: {
-            //         x: { field: "x", type: "temporal" as const },
-            //         y: { field: "y", type: "quantitative" as const },
-            //     },
-            // },
-            // ...pointLabelData.map(pl => ({
-            //     transform: [
-            //         {
-            //             calculate: pl.labelExpression,
-            //             as: "label" as const,
-            //         },
-            //     ],
-            //     data: {
-            //         values: [pl],
-            //     },
-            //     mark: {
-            //         type: "text" as const,
-            //         dx: 12,
-            //         dy: -12,
-            //         color: "red",
-            //     },
-            //     encoding: {
-            //         x: { field: "x", type: "temporal" as const },
-            //         y: { field: "y", type: "quantitative" as const },
-            //         text: { field: "label" },
-            //     },
-            // })),
         ],
     };
 }
