@@ -34,7 +34,7 @@
         "principal": 20000
     },
     "graphs": {
-        "includeRaw30Year": true,
+        "includeRaw30Year": false,
         "optionalEndDate": "January 1, 2030",
         "skipUneventfulDays": true,
         "labelFontSize": 12
