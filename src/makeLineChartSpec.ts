@@ -140,6 +140,8 @@ export function makeLineChartSpec({
               },
           } as const);
 
+    let labelVertOffsetIndex = 0;
+
     return {
         $schema: "https://vega.github.io/schema/vega-lite/v5.json",
         title,
@@ -241,7 +243,10 @@ export function makeLineChartSpec({
                         mark: {
                             type: "text" as const,
                             dx: 12,
-                            dy: -12,
+                            dy:
+                                -12 -
+                                CONFIG.graphs.labelVertOffset *
+                                    labelVertOffsetIndex++,
                             color: "red",
                             fontSize: CONFIG.graphs.labelFontSize,
                         },

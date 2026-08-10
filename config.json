@@ -37,7 +37,8 @@
         "includeRaw30Year": false,
         "optionalEndDate": "January 1, 2030",
         "skipUneventfulDays": true,
-        "labelFontSize": 12
+        "labelFontSize": 12,
+        "labelVertOffset": 6
     },
     "inflation": {
         "estimatedRatePercentage": 2.5
