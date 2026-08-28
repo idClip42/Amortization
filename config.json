@@ -30,6 +30,108 @@
         "includeAverage": true,
         "averageStartDate": "November 1, 2025"
     },
+    "cashFlow": {
+        "income": [],
+        "monthlyIncome": [
+            { "month": "2025-08", "amount": 9818.39 },
+            { "month": "2025-09", "amount": 6760.89 },
+            { "month": "2025-10", "amount": 6588.48 },
+            { "month": "2025-11", "amount": 6599.39 },
+            { "month": "2025-12", "amount": 6567.61 },
+            { "month": "2026-01", "amount": 9914.51 },
+            { "month": "2026-02", "amount": 6621.27 },
+            { "month": "2026-03", "amount": 8927.68 },
+            { "month": "2026-04", "amount": 6682.27 },
+            { "month": "2026-05", "amount": 6684.57 },
+            { "month": "2026-06", "amount": 6683.44 },
+            { "month": "2026-07", "amount": 10175.29 },
+            { "month": "2026-08", "amount": 4248.11 }
+        ],
+        "monthlyCreditCardPayments": [
+            { "month": "2025-06", "amount": 1068.85 },
+            { "month": "2025-07", "amount": 1585.33 },
+            { "month": "2025-08", "amount": 5543.04 },
+            { "month": "2025-09", "amount": 4550.82 },
+            { "month": "2025-10", "amount": 3159.46 },
+            { "month": "2025-11", "amount": 2432.88 },
+            { "month": "2025-12", "amount": 2769.17 },
+            { "month": "2026-01", "amount": 2046 },
+            { "month": "2026-02", "amount": 1438.53 },
+            { "month": "2026-03", "amount": 1384.14 },
+            { "month": "2026-04", "amount": 1445.39 },
+            { "month": "2026-05", "amount": 1311.03 },
+            { "month": "2026-06", "amount": 1527.11 },
+            { "month": "2026-07", "amount": 1138.78 },
+            { "month": "2026-08", "amount": 1849.84 }
+        ],
+        "recurringExpenses": [
+            {
+                "name": "HOA",
+                "changes": [
+                    {
+                        "startDate": "2025-08-04",
+                        "dayOfMonth": 4,
+                        "amount": 440
+                    },
+                    {
+                        "startDate": "2026-01-05",
+                        "dayOfMonth": 5,
+                        "amount": 468
+                    }
+                ]
+            },
+            {
+                "name": "Car insurance",
+                "changes": [
+                    {
+                        "startDate": "2025-08-24",
+                        "dayOfMonth": 24,
+                        "amount": 110.7
+                    }
+                ]
+            },
+            {
+                "name": "Internet",
+                "changes": [
+                    {
+                        "startDate": "2025-08-01",
+                        "dayOfMonth": 1,
+                        "amount": 85.94
+                    }
+                ]
+            }
+        ],
+        "gas": [
+            { "month": "2025-07", "amount": 3.22 },
+            { "month": "2025-08", "amount": 14.12 },
+            { "month": "2025-09", "amount": 11.62 },
+            { "month": "2025-10", "amount": 32.64 },
+            { "month": "2025-11", "amount": 130.73 },
+            { "month": "2025-12", "amount": 261.83 },
+            { "month": "2026-01", "amount": 248.22 },
+            { "month": "2026-02", "amount": 181.18 },
+            { "month": "2026-03", "amount": 60.61 },
+            { "month": "2026-04", "amount": 26.28 },
+            { "month": "2026-05", "amount": 15.56 },
+            { "month": "2026-06", "amount": 14.58 },
+            { "month": "2026-07", "amount": 14.52 }
+        ],
+        "electric": [
+            { "month": "2025-07", "amount": 56.31 },
+            { "month": "2025-08", "amount": 194.83 },
+            { "month": "2025-09", "amount": 127.47 },
+            { "month": "2025-10", "amount": 105.23 },
+            { "month": "2025-11", "amount": 125.19 },
+            { "month": "2025-12", "amount": 167.02 },
+            { "month": "2026-01", "amount": 208.97 },
+            { "month": "2026-02", "amount": 183.48 },
+            { "month": "2026-03", "amount": 104.81 },
+            { "month": "2026-04", "amount": 116.11 },
+            { "month": "2026-05", "amount": 127.61 },
+            { "month": "2026-06", "amount": 211.76 },
+            { "month": "2026-07", "amount": 263.67 }
+        ]
+    },
     "target": {
         "principal": 20000
     },

@@ -2,6 +2,7 @@ import config from "./config.json" with { type: "json" };
 import { renderGraphs } from "./src/render.js";
 import { run } from "./src/run.js";
 import { GraphPointData } from "./src/types.js";
+import { buildMonthlyCashFlow } from "./src/cashFlow.js";
 import fs from "fs";
 import path from "path";
 
@@ -207,6 +208,8 @@ const graphPointData: GraphPointData[] = dataSets.flatMap(ds =>
         }))
 );
 
+const monthlyCashFlow = buildMonthlyCashFlow(config, new Date());
+
 fs.promises
     .rm(config.output.folder, { recursive: true, force: true })
     .then(() => fs.promises.mkdir(config.output.folder))
@@ -216,7 +219,8 @@ fs.promises
             config.loan,
             config.target.principal,
             new Date(),
-            config.output.folder
+            config.output.folder,
+            monthlyCashFlow
         )
     )
     .then(() => {
@@ -228,5 +232,9 @@ fs.promises
             path.join(config.output.folder, "report.json"),
             JSON.stringify(table, null, 4)
         );
-        return Promise.all([dataPromise, reportPromise]);
+        const cashFlowPromise = fs.promises.writeFile(
+            path.join(config.output.folder, "cash-flow/monthly-cash-allocation.json"),
+            JSON.stringify(monthlyCashFlow, null, 4)
+        );
+        return Promise.all([dataPromise, reportPromise, cashFlowPromise]);
     });

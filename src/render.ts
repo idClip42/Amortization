@@ -4,6 +4,8 @@ import { compile } from "vega-lite";
 import { parse, View } from "vega";
 import { GraphPointData } from "./types.js";
 import { makeLineChartSpec, type Series } from "./makeLineChartSpec.js";
+import { makeCashFlowChartSpec } from "./makeCashFlowChartSpec.js";
+import type { MonthlyCashFlow } from "./cashFlow.js";
 import type Config from "./../config.json";
 import { toSafeFilename } from "./utils.js";
 
@@ -42,10 +44,18 @@ export async function renderGraphs(
     loan: (typeof Config)["loan"],
     targetPrincipal: number,
     inflationDate: Date,
-    outputFolder: string
+    outputFolder: string,
+    cashFlow: MonthlyCashFlow
 ): Promise<void> {
     const renderPromises: Promise<void>[] = [];
     const datasetNames = [...new Set(data.map(d => d.name))];
+
+    renderPromises.push(
+        renderSvg(
+            makeCashFlowChartSpec(cashFlow),
+            path.join(outputFolder, "cash-flow/monthly-cash-allocation.svg")
+        )
+    );
 
     // REMAINING PRINCIPAL
 
