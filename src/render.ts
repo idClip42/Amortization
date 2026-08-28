@@ -4,7 +4,10 @@ import { compile } from "vega-lite";
 import { parse, View } from "vega";
 import { GraphPointData } from "./types.js";
 import { makeLineChartSpec, type Series } from "./makeLineChartSpec.js";
-import { makeCashFlowChartSpec } from "./makeCashFlowChartSpec.js";
+import {
+    makeCashFlowChartSpec,
+    type CashFlowLayerLabels,
+} from "./makeCashFlowChartSpec.js";
 import type { MonthlyCashFlow } from "./cashFlow.js";
 import type Config from "./../config.json";
 import { toSafeFilename } from "./utils.js";
@@ -46,14 +49,19 @@ export async function renderGraphs(
     inflationDate: Date,
     outputFolder: string,
     cashFlow: MonthlyCashFlow,
-    cashFlowIncomeScaleMultiplier: number
+    cashFlowIncomeScaleMultiplier: number,
+    cashFlowLayerLabels: CashFlowLayerLabels
 ): Promise<void> {
     const renderPromises: Promise<void>[] = [];
     const datasetNames = [...new Set(data.map(d => d.name))];
 
     renderPromises.push(
         renderSvg(
-            makeCashFlowChartSpec(cashFlow, cashFlowIncomeScaleMultiplier),
+            makeCashFlowChartSpec(
+                cashFlow,
+                cashFlowIncomeScaleMultiplier,
+                cashFlowLayerLabels
+            ),
             path.join(outputFolder, "cash-flow/monthly-cash-allocation.svg")
         )
     );

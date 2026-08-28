@@ -4,13 +4,27 @@ import type { MonthlyCashFlow } from "./cashFlow.js";
 const width = 900;
 const height = 450;
 
+export type CashFlowLayerLabels = {
+    categories: string[];
+    minimumAmount: number;
+};
+
 export function makeCashFlowChartSpec(
     data: MonthlyCashFlow,
-    incomeScaleMultiplier: number
+    incomeScaleMultiplier: number,
+    layerLabels: CashFlowLayerLabels
 ): Parameters<typeof compile>[0] {
     if (!Number.isFinite(incomeScaleMultiplier) || incomeScaleMultiplier <= 0) {
         throw new Error(
             `cashFlow.incomeScaleMultiplier must be a positive number; received ${incomeScaleMultiplier}`
+        );
+    }
+    if (
+        !Number.isFinite(layerLabels.minimumAmount) ||
+        layerLabels.minimumAmount < 0
+    ) {
+        throw new Error(
+            `cashFlow.layerLabels.minimumAmount must be a non-negative number; received ${layerLabels.minimumAmount}`
         );
     }
     const maxIncome = Math.max(...data.income.map(entry => entry.amount), 0);
@@ -57,6 +71,7 @@ export function makeCashFlowChartSpec(
                         field: "category",
                         type: "nominal",
                         title: "Allocation",
+                        sort: "ascending",
                     },
                     tooltip: [
                         {
@@ -78,6 +93,82 @@ export function makeCashFlowChartSpec(
                             format: "$.2f",
                         },
                     ],
+                },
+            },
+            {
+                data: { values: data.spending },
+                transform: [
+                    {
+                        timeUnit: "yearmonth",
+                        field: "month",
+                        as: "monthBucket",
+                    },
+                    {
+                        aggregate: [
+                            {
+                                op: "sum",
+                                field: "amount",
+                                as: "monthlyAmount",
+                            },
+                        ],
+                        groupby: ["monthBucket", "category"],
+                    },
+                    {
+                        impute: "monthlyAmount",
+                        key: "monthBucket",
+                        groupby: ["category"],
+                        value: 0,
+                    },
+                    {
+                        stack: "monthlyAmount",
+                        groupby: ["monthBucket"],
+                        sort: [
+                            {
+                                field: "category",
+                                order: "descending",
+                            },
+                        ],
+                        as: ["layerStart", "layerEnd"],
+                    },
+                    {
+                        filter: {
+                            field: "category",
+                            oneOf: layerLabels.categories,
+                        },
+                    },
+                    {
+                        filter: `datum.monthlyAmount >= ${layerLabels.minimumAmount}`,
+                    },
+                    {
+                        calculate: "(datum.layerStart + datum.layerEnd) / 2",
+                        as: "layerMiddle",
+                    },
+                    {
+                        calculate:
+                            "format(datum.monthlyAmount / 1000, '.1f') + 'k'",
+                        as: "label",
+                    },
+                ],
+                mark: {
+                    type: "text",
+                    align: "center",
+                    baseline: "middle",
+                    color: "#111827",
+                    fontSize: 11,
+                    fontWeight: "bold",
+                    clip: true,
+                },
+                encoding: {
+                    x: {
+                        field: "monthBucket",
+                        type: "temporal",
+                    },
+                    y: {
+                        field: "layerMiddle",
+                        type: "quantitative",
+                        scale: yScale,
+                    },
+                    text: { field: "label" },
                 },
             },
             {

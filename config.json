@@ -33,6 +33,10 @@
     },
     "cashFlow": {
         "incomeScaleMultiplier": 1.2,
+        "layerLabels": {
+            "categories": ["Mortgage: Extra", "Spending: Card"],
+            "minimumAmount": 1000
+        },
         "income": [],
         "monthlyIncome": [
             { "month": "2025-08", "amount": 9818.39 },

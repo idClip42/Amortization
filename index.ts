@@ -3,6 +3,7 @@ import { renderGraphs } from "./src/render.js";
 import { run } from "./src/run.js";
 import { GraphPointData } from "./src/types.js";
 import { buildMonthlyCashFlow } from "./src/cashFlow.js";
+import { CashFlowLayerLabels } from "./src/makeCashFlowChartSpec.js";
 import fs from "fs";
 import path from "path";
 
@@ -221,7 +222,8 @@ fs.promises
             new Date(),
             config.output.folder,
             monthlyCashFlow,
-            config.cashFlow.incomeScaleMultiplier
+            config.cashFlow.incomeScaleMultiplier,
+            config.cashFlow.layerLabels as CashFlowLayerLabels
         )
     )
     .then(() => {
