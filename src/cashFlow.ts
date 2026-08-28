@@ -226,7 +226,7 @@ export function buildMonthlyCashFlow(
 
     const addCreditCardPayment = (date: Date, amount: number) => {
         assertAmount(amount, "Credit-card payment amount");
-        addSpending("Spending: Card", date, amount);
+        addSpending("Credit Card", date, amount);
     };
 
     const firstMortgagePayment = new Date(

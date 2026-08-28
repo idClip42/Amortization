@@ -175,7 +175,7 @@ export function makeCashFlowChartSpec(
                 data: { values: data.income },
                 mark: {
                     type: "line",
-                    color: "#2563eb",
+                    color: "#000000",
                     strokeDash: [8, 5],
                     strokeWidth: 3,
                     clip: true,
@@ -219,7 +219,7 @@ export function makeCashFlowChartSpec(
                               align: "left",
                               dx: 8,
                               dy: -8,
-                              color: "#2563eb",
+                              color: "#000000",
                               fontSize: 13,
                               fontWeight: "bold",
                           },
