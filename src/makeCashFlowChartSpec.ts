@@ -5,8 +5,18 @@ const width = 900;
 const height = 450;
 
 export function makeCashFlowChartSpec(
-    data: MonthlyCashFlow
+    data: MonthlyCashFlow,
+    incomeScaleMultiplier: number
 ): Parameters<typeof compile>[0] {
+    if (!Number.isFinite(incomeScaleMultiplier) || incomeScaleMultiplier <= 0) {
+        throw new Error(
+            `cashFlow.incomeScaleMultiplier must be a positive number; received ${incomeScaleMultiplier}`
+        );
+    }
+    const maxIncome = Math.max(...data.income.map(entry => entry.amount), 0);
+    const yMax = maxIncome * incomeScaleMultiplier;
+    const yScale = yMax > 0 ? { domain: [0, yMax], nice: false } : { domainMin: 0 };
+
     return {
         $schema: "https://vega.github.io/schema/vega-lite/v5.json",
         title: "Monthly Cash Allocation (scheduled bills and recorded payments)",
@@ -18,6 +28,7 @@ export function makeCashFlowChartSpec(
                 mark: {
                     type: "area",
                     interpolate: "linear",
+                    clip: true,
                 },
                 encoding: {
                     x: {
@@ -33,7 +44,7 @@ export function makeCashFlowChartSpec(
                         aggregate: "sum",
                         stack: "zero",
                         title: "Cash leaving checking ($)",
-                        scale: { domainMin: 0 },
+                        scale: yScale,
                     },
                     color: {
                         field: "category",
@@ -69,6 +80,7 @@ export function makeCashFlowChartSpec(
                     color: "#2563eb",
                     strokeDash: [8, 5],
                     strokeWidth: 3,
+                    clip: true,
                 },
                 encoding: {
                     x: {
@@ -81,7 +93,7 @@ export function makeCashFlowChartSpec(
                         type: "quantitative",
                         aggregate: "sum",
                         title: "Cash leaving checking ($)",
-                        scale: { domainMin: 0 },
+                        scale: yScale,
                     },
                     tooltip: [
                         {

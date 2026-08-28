@@ -31,6 +31,7 @@
         "averageStartDate": "November 1, 2025"
     },
     "cashFlow": {
+        "incomeScaleMultiplier": 1.5,
         "income": [],
         "monthlyIncome": [
             { "month": "2025-08", "amount": 9818.39 },

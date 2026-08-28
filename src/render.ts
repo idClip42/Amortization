@@ -45,14 +45,15 @@ export async function renderGraphs(
     targetPrincipal: number,
     inflationDate: Date,
     outputFolder: string,
-    cashFlow: MonthlyCashFlow
+    cashFlow: MonthlyCashFlow,
+    cashFlowIncomeScaleMultiplier: number
 ): Promise<void> {
     const renderPromises: Promise<void>[] = [];
     const datasetNames = [...new Set(data.map(d => d.name))];
 
     renderPromises.push(
         renderSvg(
-            makeCashFlowChartSpec(cashFlow),
+            makeCashFlowChartSpec(cashFlow, cashFlowIncomeScaleMultiplier),
             path.join(outputFolder, "cash-flow/monthly-cash-allocation.svg")
         )
     );

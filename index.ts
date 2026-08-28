@@ -220,7 +220,8 @@ fs.promises
             config.target.principal,
             new Date(),
             config.output.folder,
-            monthlyCashFlow
+            monthlyCashFlow,
+            config.cashFlow.incomeScaleMultiplier
         )
     )
     .then(() => {
