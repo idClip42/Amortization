@@ -33,6 +33,7 @@
     },
     "cashFlow": {
         "incomeScaleMultiplier": 1.2,
+        "useIncomeScaleMultiplier": true,
         "layerLabels": {
             "categories": ["Mortgage: Extra", "Credit Card"],
             "minimumAmount": 1000

@@ -50,6 +50,7 @@ export async function renderGraphs(
     outputFolder: string,
     cashFlow: MonthlyCashFlow,
     cashFlowIncomeScaleMultiplier: number,
+    useCashFlowIncomeScaleMultiplier: boolean,
     cashFlowLayerLabels: CashFlowLayerLabels
 ): Promise<void> {
     const renderPromises: Promise<void>[] = [];
@@ -60,6 +61,7 @@ export async function renderGraphs(
             makeCashFlowChartSpec(
                 cashFlow,
                 cashFlowIncomeScaleMultiplier,
+                useCashFlowIncomeScaleMultiplier,
                 cashFlowLayerLabels
             ),
             path.join(outputFolder, "cash-flow/monthly-cash-allocation.svg")

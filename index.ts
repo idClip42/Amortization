@@ -223,6 +223,7 @@ fs.promises
             config.output.folder,
             monthlyCashFlow,
             config.cashFlow.incomeScaleMultiplier,
+            config.cashFlow.useIncomeScaleMultiplier,
             config.cashFlow.layerLabels as CashFlowLayerLabels
         )
     )
