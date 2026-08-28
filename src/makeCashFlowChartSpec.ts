@@ -16,6 +16,13 @@ export function makeCashFlowChartSpec(
     const maxIncome = Math.max(...data.income.map(entry => entry.amount), 0);
     const yMax = maxIncome * incomeScaleMultiplier;
     const yScale = yMax > 0 ? { domain: [0, yMax], nice: false } : { domainMin: 0 };
+    const firstIncome = data.income.reduce<MonthlyCashFlow["income"][number] | null>(
+        (first, entry) =>
+            !first || entry.month.getTime() < first.month.getTime()
+                ? entry
+                : first,
+        null
+    );
 
     return {
         $schema: "https://vega.github.io/schema/vega-lite/v5.json",
@@ -112,6 +119,35 @@ export function makeCashFlowChartSpec(
                     ],
                 },
             },
+            ...(firstIncome
+                ? [
+                      {
+                          data: { values: [firstIncome] },
+                          mark: {
+                              type: "text",
+                              align: "left",
+                              dx: 8,
+                              dy: -8,
+                              color: "#2563eb",
+                              fontSize: 13,
+                              fontWeight: "bold",
+                          },
+                          encoding: {
+                              x: {
+                                  field: "month",
+                                  type: "temporal",
+                                  timeUnit: "yearmonth",
+                              },
+                              y: {
+                                  field: "amount",
+                                  type: "quantitative",
+                                  scale: yScale,
+                              },
+                              text: { value: "Income" },
+                          },
+                      },
+                  ]
+                : []),
         ],
     } as Parameters<typeof compile>[0];
 }

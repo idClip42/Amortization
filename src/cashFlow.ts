@@ -24,6 +24,7 @@ type MonthlyAmount = {
 
 type ExpenseChange = {
     startDate: string;
+    endDate?: string;
     dayOfMonth: number;
     amount: number;
 };
@@ -114,6 +115,7 @@ function parseMonth(value: string, context: string): Date {
 
 function sortedChanges(expense: RecurringExpense): (ExpenseChange & {
     startDateValue: Date;
+    endDateValue?: Date;
 })[] {
     if (expense.changes.length === 0) {
         throw new Error(`Recurring expense ${expense.name} must have at least one change.`);
@@ -122,12 +124,20 @@ function sortedChanges(expense: RecurringExpense): (ExpenseChange & {
     return expense.changes
         .map(change => {
             assertAmount(change.amount, `${expense.name} amount`);
+            const startDateValue = parseDate(
+                change.startDate,
+                `${expense.name} startDate`
+            );
+            const endDateValue = change.endDate
+                ? parseDate(change.endDate, `${expense.name} endDate`)
+                : undefined;
+            if (endDateValue && endDateValue.getTime() < startDateValue.getTime()) {
+                throw new Error(`${expense.name} endDate must not be before its startDate.`);
+            }
             return {
                 ...change,
-                startDateValue: parseDate(
-                    change.startDate,
-                    `${expense.name} startDate`
-                ),
+                startDateValue,
+                endDateValue,
             };
         })
         .sort((left, right) => left.startDateValue.getTime() - right.startDateValue.getTime());
@@ -150,7 +160,11 @@ function recurringExpenseEntries(
             .reverse()
             .find(change => {
                 const scheduledDate = dateForMonth(month, change.dayOfMonth);
-                return scheduledDate.getTime() >= change.startDateValue.getTime();
+                return (
+                    scheduledDate.getTime() >= change.startDateValue.getTime() &&
+                    (!change.endDateValue ||
+                        scheduledDate.getTime() <= change.endDateValue.getTime())
+                );
             });
 
         if (!activeChange) continue;
@@ -212,7 +226,7 @@ export function buildMonthlyCashFlow(
 
     const addCreditCardPayment = (date: Date, amount: number) => {
         assertAmount(amount, "Credit-card payment amount");
-        addSpending("Credit card / day-to-day", date, amount);
+        addSpending("Spending: Card", date, amount);
     };
 
     const firstMortgagePayment = new Date(
@@ -229,7 +243,7 @@ export function buildMonthlyCashFlow(
             config.loan.paymentDay
         )
     ) {
-        addSpending("Scheduled mortgage payment", paymentDate, config.loan.monthlyPayment);
+        addSpending("Mortgage: Payment", paymentDate, config.loan.monthlyPayment);
     }
 
     for (const [dateText, amount] of config.lumpSums as unknown as [
@@ -241,7 +255,7 @@ export function buildMonthlyCashFlow(
             throw new Error(`Invalid lump-sum date: ${dateText}`);
         }
         if (date.getTime() <= endDate.getTime()) {
-            addSpending("Extra mortgage payment", date, amount);
+            addSpending("Mortgage: Extra", date, amount);
         }
     }
 
@@ -262,11 +276,11 @@ export function buildMonthlyCashFlow(
     };
 
     addMonthlyUtility(
-        "National Grid - Gas",
+        "Utility: Gas",
         config.cashFlow.gas as unknown as MonthlyAmount[]
     );
     addMonthlyUtility(
-        "National Grid - Electric",
+        "Utility: Electric",
         config.cashFlow.electric as unknown as MonthlyAmount[]
     );
 

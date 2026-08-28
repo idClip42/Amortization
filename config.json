@@ -82,7 +82,7 @@
                 ]
             },
             {
-                "name": "Car insurance",
+                "name": "Insurance: Car",
                 "changes": [
                     {
                         "startDate": "2025-08-24",
@@ -92,12 +92,28 @@
                 ]
             },
             {
-                "name": "Internet",
+                "name": "Utility: Internet",
                 "changes": [
                     {
                         "startDate": "2025-08-01",
                         "dayOfMonth": 1,
                         "amount": 85.94
+                    }
+                ]
+            },
+            {
+                "name": "Insurance: Home",
+                "changes": [
+                    {
+                        "startDate": "2026-01-08",
+                        "endDate": "2026-06-08",
+                        "dayOfMonth": 8,
+                        "amount": 17.17
+                    },
+                    {
+                        "startDate": "2026-08-08",
+                        "dayOfMonth": 8,
+                        "amount": 50.5
                     }
                 ]
             }
