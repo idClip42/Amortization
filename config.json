@@ -21,7 +21,8 @@
         ["May 11, 2026", 3300],
         ["June 10, 2026", 3000],
         ["July 10, 2026", 3500],
-        ["August 10, 2026", 3000]
+        ["August 10, 2026", 3000],
+        ["August 11, 2026", 800]
     ],
     "projectedLumpSums": {
         "startDate": "September 1, 2026",
