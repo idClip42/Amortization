@@ -4,6 +4,7 @@ import { run } from "./src/run.js";
 import { GraphPointData } from "./src/types.js";
 import { buildMonthlyCashFlow } from "./src/cashFlow.js";
 import { CashFlowLayerLabels } from "./src/makeCashFlowChartSpec.js";
+import { createLoanPaymentSchedule } from "./src/loanPaymentSchedule.js";
 import fs from "fs";
 import path from "path";
 
@@ -13,8 +14,12 @@ if (new Date(config.projectedLumpSums.startDate).getTime() < Date.now()) {
     );
 }
 
-const monthlyTowardLoan =
-    config.loan.monthlyPayment - config.loan.monthlyEscrow;
+const loanPaymentSchedule = createLoanPaymentSchedule(
+    config.loan.monthlyPaymentChanges
+);
+const initialMonthlyTowardLoan = loanPaymentSchedule.monthlyTowardLoanForDate(
+    new Date(config.loan.startYear, config.loan.startMonth - 1, 1)
+);
 
 console.table([
     {
@@ -24,7 +29,7 @@ console.table([
         ).toLocaleDateString(),
         "Principal ($)": config.loan.principal,
         "Interest (%)": config.loan.interest,
-        "Monthly ($)": monthlyTowardLoan,
+        "Monthly ($)": initialMonthlyTowardLoan,
     },
 ]);
 
@@ -130,7 +135,7 @@ const dataSets = runConfigs.map(cfg => {
         ),
         config.loan.principal,
         config.loan.interest,
-        monthlyTowardLoan,
+        loanPaymentSchedule.monthlyTowardLoanForDate,
         config.loan.paymentDay,
         cfg.lumpSums,
         {

@@ -1,4 +1,5 @@
 import type Config from "./../config.json";
+import { createLoanPaymentSchedule } from "./loanPaymentSchedule.js";
 
 export type MonthlyCashFlow = {
     spending: {
@@ -234,6 +235,9 @@ export function buildMonthlyCashFlow(
         config.loan.startMonth,
         config.loan.paymentDay
     );
+    const loanPaymentSchedule = createLoanPaymentSchedule(
+        config.loan.monthlyPaymentChanges
+    );
     for (
         let paymentDate = firstMortgagePayment;
         paymentDate.getTime() <= endDate.getTime();
@@ -243,7 +247,11 @@ export function buildMonthlyCashFlow(
             config.loan.paymentDay
         )
     ) {
-        addSpending("Mortgage: Payment", paymentDate, config.loan.monthlyPayment);
+        addSpending(
+            "Mortgage: Payment",
+            paymentDate,
+            loanPaymentSchedule.paymentForDate(paymentDate).monthlyPayment
+        );
     }
 
     for (const [dateText, amount] of config.lumpSums as unknown as [

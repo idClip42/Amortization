@@ -2,11 +2,21 @@
     "loan": {
         "principal": 150000,
         "interest": 5.625,
-        "monthlyPayment": 1245.46,
-        "monthlyEscrow": 381.98,
         "startYear": 2025,
         "startMonth": 8,
-        "paymentDay": 1
+        "paymentDay": 1,
+        "monthlyPaymentChanges": [
+            {
+                "startDate": "2025-08-01",
+                "monthlyPayment": 1245.46,
+                "monthlyEscrow": 381.98
+            },
+            {
+                "startDate": "2026-09-01",
+                "monthlyPayment": 1239.23,
+                "monthlyEscrow": 375.75
+            }
+        ]
     },
     "lumpSums": [
         ["September 4, 2025", 15000],

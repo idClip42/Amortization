@@ -25,7 +25,7 @@ export function run(
     startDate: Date,
     initialPrincipal: number,
     interestRate: number,
-    monthlyPayment: number,
+    monthlyTowardLoanForDate: (date: Date) => number,
     monthlyPaymentDay: number,
     lumpSums: { date: Date; dollars: number }[],
     lumpSumProjection: LumpSumProjection
@@ -60,7 +60,7 @@ export function run(
         };
 
         if (day.getDate() === monthlyPaymentDay) {
-            const todaysPayment = monthlyPayment - interestAcc;
+            const todaysPayment = monthlyTowardLoanForDate(day) - interestAcc;
 
             paidPrincipalToday = todaysPayment;
             paidInterestToday = interestAcc;
