@@ -25,7 +25,7 @@
         ["August 11, 2026", 800]
     ],
     "projectedLumpSums": {
-        "startDate": "September 1, 2026",
+        "startDate": "September 9, 2026",
         "paymentDay": 10,
         "options": [3200, 4200],
         "includeAverage": true,
