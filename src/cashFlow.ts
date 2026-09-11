@@ -307,3 +307,84 @@ export function buildMonthlyCashFlow(
         })),
     };
 }
+
+/**
+ * Converts monthly cash flow into running totals from a configurable baseline.
+ * Every category receives an entry for every month so stacked areas preserve
+ * their accumulated height even in months without a new payment.
+ */
+export function buildCumulativeCashFlow(
+    monthlyCashFlow: MonthlyCashFlow,
+    startMonthText: string
+): MonthlyCashFlow {
+    const startMonth = parseMonth(
+        startMonthText,
+        "cashFlow.cumulativeStartMonth"
+    );
+    const monthlyEntries = [
+        ...monthlyCashFlow.spending.map(entry => entry.month),
+        ...monthlyCashFlow.income.map(entry => entry.month),
+    ].filter(month => month.getTime() >= startMonth.getTime());
+    const lastMonth = monthlyEntries.reduce<Date | null>(
+        (latest, month) =>
+            !latest || month.getTime() > latest.getTime() ? month : latest,
+        null
+    );
+
+    if (!lastMonth) {
+        return { spending: [], income: [] };
+    }
+
+    const spendingByMonth = new Map<string, Map<string, number>>();
+    const spendingCategories = new Set<string>();
+    for (const entry of monthlyCashFlow.spending) {
+        if (entry.month.getTime() < startMonth.getTime()) continue;
+        const key = `${entry.month.getFullYear()}-${entry.month.getMonth()}`;
+        let categoryAmounts = spendingByMonth.get(key);
+        if (!categoryAmounts) {
+            categoryAmounts = new Map<string, number>();
+            spendingByMonth.set(key, categoryAmounts);
+        }
+        categoryAmounts.set(
+            entry.category,
+            (categoryAmounts.get(entry.category) ?? 0) + entry.amount
+        );
+        spendingCategories.add(entry.category);
+    }
+
+    const incomeByMonth = new Map<string, number>();
+    for (const entry of monthlyCashFlow.income) {
+        if (entry.month.getTime() < startMonth.getTime()) continue;
+        const key = `${entry.month.getFullYear()}-${entry.month.getMonth()}`;
+        incomeByMonth.set(key, (incomeByMonth.get(key) ?? 0) + entry.amount);
+    }
+
+    const cumulativeByCategory = new Map<string, number>();
+    const spending: MonthlyCashFlow["spending"] = [];
+    const income: MonthlyCashFlow["income"] = [];
+    let cumulativeIncome = 0;
+    for (
+        let month = startMonth;
+        month.getTime() <= lastMonth.getTime();
+        month = new Date(month.getFullYear(), month.getMonth() + 1, 1)
+    ) {
+        const key = `${month.getFullYear()}-${month.getMonth()}`;
+        const categoryAmounts = spendingByMonth.get(key);
+        for (const category of spendingCategories) {
+            const cumulativeAmount =
+                (cumulativeByCategory.get(category) ?? 0) +
+                (categoryAmounts?.get(category) ?? 0);
+            cumulativeByCategory.set(category, cumulativeAmount);
+            spending.push({
+                month: new Date(month),
+                category,
+                amount: cumulativeAmount,
+            });
+        }
+
+        cumulativeIncome += incomeByMonth.get(key) ?? 0;
+        income.push({ month: new Date(month), amount: cumulativeIncome });
+    }
+
+    return { spending, income };
+}

@@ -44,6 +44,7 @@
     },
     "cashFlow": {
         "yAxisMaximum": 11000,
+        "cumulativeStartMonth": "2025-11",
         "layerLabels": {
             "categories": ["Mortgage: Extra", "Credit Card"],
             "minimumAmount": 1000

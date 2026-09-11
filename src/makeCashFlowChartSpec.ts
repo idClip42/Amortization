@@ -9,25 +9,38 @@ export type CashFlowLayerLabels = {
     minimumAmount: number;
 };
 
-export function makeCashFlowChartSpec(
+type CashFlowChartOptions = {
+    title: string;
+    yTitle: string;
+    yAxisMaximum?: number;
+    layerLabels?: CashFlowLayerLabels;
+    showIncomeAmounts: boolean;
+};
+
+function makeCashFlowChartSpec(
     data: MonthlyCashFlow,
-    yAxisMaximum: number,
-    layerLabels: CashFlowLayerLabels
+    options: CashFlowChartOptions
 ): Parameters<typeof compile>[0] {
-    if (!Number.isFinite(yAxisMaximum) || yAxisMaximum <= 0) {
+    if (
+        options.yAxisMaximum !== undefined &&
+        (!Number.isFinite(options.yAxisMaximum) || options.yAxisMaximum <= 0)
+    ) {
         throw new Error(
-            `cashFlow.yAxisMaximum must be a positive number; received ${yAxisMaximum}`
+            `cashFlow.yAxisMaximum must be a positive number; received ${options.yAxisMaximum}`
         );
     }
     if (
-        !Number.isFinite(layerLabels.minimumAmount) ||
-        layerLabels.minimumAmount < 0
+        options.layerLabels &&
+        (!Number.isFinite(options.layerLabels.minimumAmount) ||
+            options.layerLabels.minimumAmount < 0)
     ) {
         throw new Error(
-            `cashFlow.layerLabels.minimumAmount must be a non-negative number; received ${layerLabels.minimumAmount}`
+            `cashFlow.layerLabels.minimumAmount must be a non-negative number; received ${options.layerLabels.minimumAmount}`
         );
     }
-    const yScale = { domain: [0, yAxisMaximum], nice: false };
+    const yScale = options.yAxisMaximum
+        ? { domain: [0, options.yAxisMaximum], nice: false }
+        : { zero: true, nice: true };
     const firstIncome = data.income.reduce<MonthlyCashFlow["income"][number] | null>(
         (first, entry) =>
             !first || entry.month.getTime() < first.month.getTime()
@@ -38,7 +51,7 @@ export function makeCashFlowChartSpec(
 
     return {
         $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-        title: "Monthly Cash Allocation (scheduled bills and recorded payments)",
+        title: options.title,
         width,
         height,
         layer: [
@@ -62,7 +75,7 @@ export function makeCashFlowChartSpec(
                         type: "quantitative",
                         aggregate: "sum",
                         stack: "zero",
-                        title: "Cash leaving checking ($)",
+                        title: options.yTitle,
                         scale: yScale,
                     },
                     color: {
@@ -93,9 +106,11 @@ export function makeCashFlowChartSpec(
                     ],
                 },
             },
-            {
-                data: { values: data.spending },
-                transform: [
+            ...(options.layerLabels
+                ? [
+                      {
+                          data: { values: data.spending },
+                          transform: [
                     {
                         timeUnit: "yearmonth",
                         field: "month",
@@ -131,11 +146,11 @@ export function makeCashFlowChartSpec(
                     {
                         filter: {
                             field: "category",
-                            oneOf: layerLabels.categories,
+                            oneOf: options.layerLabels.categories,
                         },
                     },
                     {
-                        filter: `datum.monthlyAmount >= ${layerLabels.minimumAmount}`,
+                        filter: `datum.monthlyAmount >= ${options.layerLabels.minimumAmount}`,
                     },
                     {
                         calculate: "(datum.layerStart + datum.layerEnd) / 2",
@@ -146,8 +161,8 @@ export function makeCashFlowChartSpec(
                             "format(datum.monthlyAmount / 1000, '.1f') + 'k'",
                         as: "label",
                     },
-                ],
-                mark: {
+                          ],
+                          mark: {
                     type: "text",
                     align: "center",
                     baseline: "middle",
@@ -155,8 +170,8 @@ export function makeCashFlowChartSpec(
                     fontSize: 11,
                     fontWeight: "bold",
                     clip: true,
-                },
-                encoding: {
+                          },
+                          encoding: {
                     x: {
                         field: "monthBucket",
                         type: "temporal",
@@ -167,8 +182,10 @@ export function makeCashFlowChartSpec(
                         scale: yScale,
                     },
                     text: { field: "label" },
-                },
-            },
+                          },
+                      },
+                  ]
+                : []),
             {
                 data: { values: data.income },
                 mark: {
@@ -188,7 +205,7 @@ export function makeCashFlowChartSpec(
                         field: "amount",
                         type: "quantitative",
                         aggregate: "sum",
-                        title: "Cash leaving checking ($)",
+                        title: options.yTitle,
                         scale: yScale,
                     },
                     tooltip: [
@@ -208,15 +225,17 @@ export function makeCashFlowChartSpec(
                     ],
                 },
             },
-            {
-                data: { values: data.income },
-                transform: [
+            ...(options.showIncomeAmounts
+                ? [
+                      {
+                          data: { values: data.income },
+                          transform: [
                     {
                         calculate: "format(datum.amount / 1000, '.1f') + 'k'",
                         as: "label",
                     },
-                ],
-                mark: {
+                          ],
+                          mark: {
                     type: "text",
                     align: "center",
                     baseline: "bottom",
@@ -225,8 +244,8 @@ export function makeCashFlowChartSpec(
                     fontSize: 11,
                     fontWeight: "bold",
                     clip: true,
-                },
-                encoding: {
+                          },
+                          encoding: {
                     x: {
                         field: "month",
                         type: "temporal",
@@ -238,8 +257,10 @@ export function makeCashFlowChartSpec(
                         scale: yScale,
                     },
                     text: { field: "label" },
-                },
-            },
+                          },
+                      },
+                  ]
+                : []),
             ...(firstIncome
                 ? [
                       {
@@ -271,4 +292,28 @@ export function makeCashFlowChartSpec(
                 : []),
         ],
     } as Parameters<typeof compile>[0];
+}
+
+export function makeMonthlyCashFlowChartSpec(
+    data: MonthlyCashFlow,
+    yAxisMaximum: number,
+    layerLabels: CashFlowLayerLabels
+): Parameters<typeof compile>[0] {
+    return makeCashFlowChartSpec(data, {
+        title: "Monthly Cash Allocation (scheduled bills and recorded payments)",
+        yTitle: "Cash leaving checking ($)",
+        yAxisMaximum,
+        layerLabels,
+        showIncomeAmounts: true,
+    });
+}
+
+export function makeCumulativeCashFlowChartSpec(
+    data: MonthlyCashFlow
+): Parameters<typeof compile>[0] {
+    return makeCashFlowChartSpec(data, {
+        title: "Cumulative Cash Allocation",
+        yTitle: "Cumulative cash flow ($)",
+        showIncomeAmounts: false,
+    });
 }

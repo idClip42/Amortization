@@ -5,7 +5,8 @@ import { parse, View } from "vega";
 import { GraphPointData } from "./types.js";
 import { makeLineChartSpec, type Series } from "./makeLineChartSpec.js";
 import {
-    makeCashFlowChartSpec,
+    makeCumulativeCashFlowChartSpec,
+    makeMonthlyCashFlowChartSpec,
     type CashFlowLayerLabels,
 } from "./makeCashFlowChartSpec.js";
 import type { MonthlyCashFlow } from "./cashFlow.js";
@@ -49,6 +50,7 @@ export async function renderGraphs(
     inflationDate: Date,
     outputFolder: string,
     cashFlow: MonthlyCashFlow,
+    cumulativeCashFlow: MonthlyCashFlow,
     cashFlowYAxisMaximum: number,
     cashFlowLayerLabels: CashFlowLayerLabels
 ): Promise<void> {
@@ -70,12 +72,18 @@ export async function renderGraphs(
 
     renderPromises.push(
         renderSvg(
-            makeCashFlowChartSpec(
+            makeMonthlyCashFlowChartSpec(
                 chartCashFlow,
                 cashFlowYAxisMaximum,
                 cashFlowLayerLabels
             ),
             path.join(outputFolder, "cash-flow/monthly-cash-allocation.svg")
+        )
+    );
+    renderPromises.push(
+        renderSvg(
+            makeCumulativeCashFlowChartSpec(cumulativeCashFlow),
+            path.join(outputFolder, "cash-flow/cumulative-cash-allocation.svg")
         )
     );
 

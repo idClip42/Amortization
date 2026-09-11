@@ -2,7 +2,7 @@ import config from "./config.json" with { type: "json" };
 import { renderGraphs } from "./src/render.js";
 import { run } from "./src/run.js";
 import { GraphPointData } from "./src/types.js";
-import { buildMonthlyCashFlow } from "./src/cashFlow.js";
+import { buildCumulativeCashFlow, buildMonthlyCashFlow } from "./src/cashFlow.js";
 import { CashFlowLayerLabels } from "./src/makeCashFlowChartSpec.js";
 import { createLoanPaymentSchedule } from "./src/loanPaymentSchedule.js";
 import fs from "fs";
@@ -215,6 +215,10 @@ const graphPointData: GraphPointData[] = dataSets.flatMap(ds =>
 );
 
 const monthlyCashFlow = buildMonthlyCashFlow(config, new Date());
+const cumulativeCashFlow = buildCumulativeCashFlow(
+    monthlyCashFlow,
+    config.cashFlow.cumulativeStartMonth
+);
 
 fs.promises
     .rm(config.output.folder, { recursive: true, force: true })
@@ -227,6 +231,7 @@ fs.promises
             new Date(),
             config.output.folder,
             monthlyCashFlow,
+            cumulativeCashFlow,
             config.cashFlow.yAxisMaximum,
             config.cashFlow.layerLabels as CashFlowLayerLabels
         )
@@ -244,5 +249,14 @@ fs.promises
             path.join(config.output.folder, "cash-flow/monthly-cash-allocation.json"),
             JSON.stringify(monthlyCashFlow, null, 4)
         );
-        return Promise.all([dataPromise, reportPromise, cashFlowPromise]);
+        const cumulativeCashFlowPromise = fs.promises.writeFile(
+            path.join(config.output.folder, "cash-flow/cumulative-cash-allocation.json"),
+            JSON.stringify(cumulativeCashFlow, null, 4)
+        );
+        return Promise.all([
+            dataPromise,
+            reportPromise,
+            cashFlowPromise,
+            cumulativeCashFlowPromise,
+        ]);
     });
