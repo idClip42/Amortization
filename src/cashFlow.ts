@@ -270,11 +270,11 @@ export function buildMonthlyCashFlow(
 
     addMonthlyUtility(
         "Utility: Gas",
-        config.cashFlow.gas as unknown as MonthlyAmount[]
+        config.cashFlow.gasPayments as unknown as MonthlyAmount[]
     );
     addMonthlyUtility(
         "Utility: Electric",
-        config.cashFlow.electric as unknown as MonthlyAmount[]
+        config.cashFlow.electricPayments as unknown as MonthlyAmount[]
     );
 
     for (const payment of config.cashFlow

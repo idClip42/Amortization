@@ -157,37 +157,37 @@
                 ]
             }
         ],
-        "gas": [
-            { "month": "2025-07", "amount": 3.22 },
-            { "month": "2025-08", "amount": 14.12 },
-            { "month": "2025-09", "amount": 11.62 },
-            { "month": "2025-10", "amount": 32.64 },
-            { "month": "2025-11", "amount": 130.73 },
-            { "month": "2025-12", "amount": 261.83 },
-            { "month": "2026-01", "amount": 248.22 },
-            { "month": "2026-02", "amount": 181.18 },
-            { "month": "2026-03", "amount": 60.61 },
-            { "month": "2026-04", "amount": 26.28 },
-            { "month": "2026-05", "amount": 15.56 },
-            { "month": "2026-06", "amount": 14.58 },
-            { "month": "2026-07", "amount": 14.52 },
-            { "month": "2026-08", "amount": 12.92 }
+        "gasPayments": [
+            { "month": "2025-08", "amount": 3.22 },
+            { "month": "2025-09", "amount": 14.12 },
+            { "month": "2025-10", "amount": 11.62 },
+            { "month": "2025-11", "amount": 32.64 },
+            { "month": "2025-12", "amount": 130.73 },
+            { "month": "2026-01", "amount": 261.83 },
+            { "month": "2026-02", "amount": 248.22 },
+            { "month": "2026-03", "amount": 181.18 },
+            { "month": "2026-04", "amount": 60.61 },
+            { "month": "2026-05", "amount": 26.28 },
+            { "month": "2026-06", "amount": 15.56 },
+            { "month": "2026-07", "amount": 14.58 },
+            { "month": "2026-08", "amount": 14.52 },
+            { "month": "2026-09", "amount": 12.92 }
         ],
-        "electric": [
-            { "month": "2025-07", "amount": 56.31 },
-            { "month": "2025-08", "amount": 194.83 },
-            { "month": "2025-09", "amount": 127.47 },
-            { "month": "2025-10", "amount": 105.23 },
-            { "month": "2025-11", "amount": 125.19 },
-            { "month": "2025-12", "amount": 167.02 },
-            { "month": "2026-01", "amount": 208.97 },
-            { "month": "2026-02", "amount": 183.48 },
-            { "month": "2026-03", "amount": 104.81 },
-            { "month": "2026-04", "amount": 116.11 },
-            { "month": "2026-05", "amount": 127.61 },
-            { "month": "2026-06", "amount": 211.76 },
-            { "month": "2026-07", "amount": 263.67 },
-            { "month": "2026-08", "amount": 200.36 }
+        "electricPayments": [
+            { "month": "2025-08", "amount": 56.31 },
+            { "month": "2025-09", "amount": 194.83 },
+            { "month": "2025-10", "amount": 127.47 },
+            { "month": "2025-11", "amount": 105.23 },
+            { "month": "2025-12", "amount": 125.19 },
+            { "month": "2026-01", "amount": 167.02 },
+            { "month": "2026-02", "amount": 208.97 },
+            { "month": "2026-03", "amount": 183.48 },
+            { "month": "2026-04", "amount": 104.81 },
+            { "month": "2026-05", "amount": 116.11 },
+            { "month": "2026-06", "amount": 127.61 },
+            { "month": "2026-07", "amount": 211.76 },
+            { "month": "2026-08", "amount": 263.67 },
+            { "month": "2026-09", "amount": 200.36 }
         ]
     },
     "target": {
