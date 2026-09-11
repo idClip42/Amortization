@@ -43,8 +43,7 @@
         "averageStartDate": "November 1, 2025"
     },
     "cashFlow": {
-        "incomeScaleMultiplier": 1.2,
-        "useIncomeScaleMultiplier": true,
+        "yAxisMaximum": 11000,
         "layerLabels": {
             "categories": ["Mortgage: Extra", "Credit Card"],
             "minimumAmount": 1000

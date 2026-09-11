@@ -227,8 +227,7 @@ fs.promises
             new Date(),
             config.output.folder,
             monthlyCashFlow,
-            config.cashFlow.incomeScaleMultiplier,
-            config.cashFlow.useIncomeScaleMultiplier,
+            config.cashFlow.yAxisMaximum,
             config.cashFlow.layerLabels as CashFlowLayerLabels
         )
     )

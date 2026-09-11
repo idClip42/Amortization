@@ -49,19 +49,30 @@ export async function renderGraphs(
     inflationDate: Date,
     outputFolder: string,
     cashFlow: MonthlyCashFlow,
-    cashFlowIncomeScaleMultiplier: number,
-    useCashFlowIncomeScaleMultiplier: boolean,
+    cashFlowYAxisMaximum: number,
     cashFlowLayerLabels: CashFlowLayerLabels
 ): Promise<void> {
     const renderPromises: Promise<void>[] = [];
     const datasetNames = [...new Set(data.map(d => d.name))];
+    const firstMortgagePayment = new Date(
+        loan.startYear,
+        loan.startMonth,
+        loan.paymentDay
+    );
+    const chartCashFlow = {
+        spending: cashFlow.spending.filter(
+            entry => entry.month.getTime() >= firstMortgagePayment.getTime()
+        ),
+        income: cashFlow.income.filter(
+            entry => entry.month.getTime() >= firstMortgagePayment.getTime()
+        ),
+    };
 
     renderPromises.push(
         renderSvg(
             makeCashFlowChartSpec(
-                cashFlow,
-                cashFlowIncomeScaleMultiplier,
-                useCashFlowIncomeScaleMultiplier,
+                chartCashFlow,
+                cashFlowYAxisMaximum,
                 cashFlowLayerLabels
             ),
             path.join(outputFolder, "cash-flow/monthly-cash-allocation.svg")

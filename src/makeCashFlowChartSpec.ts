@@ -11,13 +11,12 @@ export type CashFlowLayerLabels = {
 
 export function makeCashFlowChartSpec(
     data: MonthlyCashFlow,
-    incomeScaleMultiplier: number,
-    useIncomeScaleMultiplier: boolean,
+    yAxisMaximum: number,
     layerLabels: CashFlowLayerLabels
 ): Parameters<typeof compile>[0] {
-    if (!Number.isFinite(incomeScaleMultiplier) || incomeScaleMultiplier <= 0) {
+    if (!Number.isFinite(yAxisMaximum) || yAxisMaximum <= 0) {
         throw new Error(
-            `cashFlow.incomeScaleMultiplier must be a positive number; received ${incomeScaleMultiplier}`
+            `cashFlow.yAxisMaximum must be a positive number; received ${yAxisMaximum}`
         );
     }
     if (
@@ -28,12 +27,7 @@ export function makeCashFlowChartSpec(
             `cashFlow.layerLabels.minimumAmount must be a non-negative number; received ${layerLabels.minimumAmount}`
         );
     }
-    const maxIncome = Math.max(...data.income.map(entry => entry.amount), 0);
-    const yMax = maxIncome * incomeScaleMultiplier;
-    const yScale =
-        useIncomeScaleMultiplier && yMax > 0
-            ? { domain: [0, yMax], nice: false }
-            : { domainMin: 0 };
+    const yScale = { domain: [0, yAxisMaximum], nice: false };
     const firstIncome = data.income.reduce<MonthlyCashFlow["income"][number] | null>(
         (first, entry) =>
             !first || entry.month.getTime() < first.month.getTime()
