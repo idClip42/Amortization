@@ -151,7 +151,7 @@ export function makeCashFlowChartSpec(
                     type: "text",
                     align: "center",
                     baseline: "middle",
-                    color: "#111827",
+                    color: "#ffffff",
                     fontSize: 11,
                     fontWeight: "bold",
                     clip: true,
@@ -208,6 +208,38 @@ export function makeCashFlowChartSpec(
                     ],
                 },
             },
+            {
+                data: { values: data.income },
+                transform: [
+                    {
+                        calculate: "format(datum.amount / 1000, '.1f') + 'k'",
+                        as: "label",
+                    },
+                ],
+                mark: {
+                    type: "text",
+                    align: "center",
+                    baseline: "bottom",
+                    dy: -6,
+                    color: "#000000",
+                    fontSize: 11,
+                    fontWeight: "bold",
+                    clip: true,
+                },
+                encoding: {
+                    x: {
+                        field: "month",
+                        type: "temporal",
+                        timeUnit: "yearmonth",
+                    },
+                    y: {
+                        field: "amount",
+                        type: "quantitative",
+                        scale: yScale,
+                    },
+                    text: { field: "label" },
+                },
+            },
             ...(firstIncome
                 ? [
                       {
@@ -216,7 +248,7 @@ export function makeCashFlowChartSpec(
                               type: "text",
                               align: "left",
                               dx: 8,
-                              dy: -8,
+                              dy: 18,
                               color: "#000000",
                               fontSize: 13,
                               fontWeight: "bold",
