@@ -194,7 +194,6 @@ export function buildMonthlyCashFlow(
     const endDate = monthEnd(today);
     const spendingByCategory = new Map<string, Map<string, number>>();
     const incomeByMonth = new Map<string, number>();
-    const incomeSourceByMonth = new Map<string, "dated" | "monthly">();
 
     const addSpending = (category: string, date: Date, amount: number) => {
         assertAmount(amount, `${category} amount`);
@@ -206,22 +205,8 @@ export function buildMonthlyCashFlow(
         addAmount(categoryTotals, date, amount);
     };
 
-    const addIncome = (
-        date: Date,
-        amount: number,
-        source: "dated" | "monthly"
-    ) => {
+    const addIncome = (date: Date, amount: number) => {
         assertAmount(amount, "Income amount");
-        const key = `${date.getFullYear()}-${date.getMonth()}`;
-        const existingSource = incomeSourceByMonth.get(key);
-        if (existingSource && existingSource !== source) {
-            throw new Error(
-                `Income for ${date.getFullYear()}-${String(
-                    date.getMonth() + 1
-                ).padStart(2, "0")} is recorded as both dated payments and a monthly total. Use one format for that month.`
-            );
-        }
-        incomeSourceByMonth.set(key, source);
         addAmount(incomeByMonth, date, amount);
     };
 
@@ -303,15 +288,7 @@ export function buildMonthlyCashFlow(
     for (const entry of config.cashFlow.income as unknown as DatedAmount[]) {
         const date = parseDate(entry.date, "Income date");
         if (date.getTime() <= endDate.getTime()) {
-            addIncome(date, entry.amount, "dated");
-        }
-    }
-
-    for (const entry of config.cashFlow
-        .monthlyIncome as unknown as MonthlyAmount[]) {
-        const month = parseMonth(entry.month, "Monthly income month");
-        if (month.getTime() <= endDate.getTime()) {
-            addIncome(month, entry.amount, "monthly");
+            addIncome(date, entry.amount);
         }
     }
 
