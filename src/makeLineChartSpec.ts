@@ -210,6 +210,7 @@ export function makeLineChartSpec({
                     return {
                         x: x,
                         y: y,
+                        series: s.name,
                         labelExpression: pl.labelExpression,
                     };
                 });
@@ -223,11 +224,14 @@ export function makeLineChartSpec({
                             type: "point" as const,
                             filled: true,
                             size: 100,
-                            color: "red",
                         },
                         encoding: {
                             x: { field: "x", type: "temporal" as const },
                             y: { field: "y", type: "quantitative" as const },
+                            color: {
+                                field: "series",
+                                type: "nominal" as const,
+                            },
                         },
                     },
                     ...pointLabelData.map(pl => ({
@@ -247,13 +251,16 @@ export function makeLineChartSpec({
                                 -12 -
                                 CONFIG.graphs.labelVertOffset *
                                     labelVertOffsetIndex++,
-                            color: "red",
                             fontSize: CONFIG.graphs.labelFontSize,
                         },
                         encoding: {
                             x: { field: "x", type: "temporal" as const },
                             y: { field: "y", type: "quantitative" as const },
                             text: { field: "label" },
+                            color: {
+                                field: "series",
+                                type: "nominal" as const,
+                            },
                         },
                     })),
                 ];
