@@ -5,6 +5,7 @@ import { GraphPointData } from "./src/types.js";
 import { buildCumulativeCashFlow, buildMonthlyCashFlow } from "./src/cashFlow.js";
 import { CashFlowLayerLabels } from "./src/makeCashFlowChartSpec.js";
 import { createLoanPaymentSchedule } from "./src/loanPaymentSchedule.js";
+import { buildMonthlyLumpSumHistory } from "./src/lumpSumHistory.js";
 import fs from "fs";
 import path from "path";
 
@@ -33,34 +34,44 @@ console.table([
     },
 ]);
 
-const runConfigs = (() => {
-    const LUMP_SUMS = config.lumpSums.map(value => {
-        const dateString = value[0];
-        if (typeof dateString !== "string")
-            throw new Error("Invalid lump sums type");
-        const dollars = value[1];
-        if (typeof dollars !== "number")
-            throw new Error("Invalid lump sums type");
-        const date = new Date(dateString);
-        if (isNaN(date.getTime()))
-            throw new Error(`Invalid date string: ${dateString}`);
-        return {
-            date,
-            dollars,
-        };
-    });
-    console.log("Lump Sums");
-    console.table(
-        LUMP_SUMS.map(s => ({
-            Date: s.date.toLocaleDateString(),
-            Dollars: s.dollars,
-        }))
-    );
-    console.log(
-        "Total Lump Sum:",
-        LUMP_SUMS.map(ls => ls.dollars).reduce((acc, curr) => curr + acc, 0)
-    );
+const LUMP_SUMS = config.lumpSums.map(value => {
+    const dateString = value[0];
+    if (typeof dateString !== "string")
+        throw new Error("Invalid lump sums type");
+    const dollars = value[1];
+    if (typeof dollars !== "number")
+        throw new Error("Invalid lump sums type");
+    const date = new Date(dateString);
+    if (isNaN(date.getTime()))
+        throw new Error(`Invalid date string: ${dateString}`);
+    return {
+        date,
+        dollars,
+    };
+});
+console.log("Lump Sums");
+console.table(
+    LUMP_SUMS.map(s => ({
+        Date: s.date.toLocaleDateString(),
+        Dollars: s.dollars,
+    }))
+);
+console.log(
+    "Total Lump Sum:",
+    LUMP_SUMS.map(ls => ls.dollars).reduce((acc, curr) => curr + acc, 0)
+);
 
+const averageStartDate = new Date(config.projectedLumpSums.averageStartDate);
+if (isNaN(averageStartDate.getTime()))
+    throw new Error(
+        `Invalid date string: ${config.projectedLumpSums.averageStartDate}`
+    );
+const lumpSumHistory = buildMonthlyLumpSumHistory(
+    LUMP_SUMS,
+    averageStartDate
+);
+
+const runConfigs = (() => {
     const result: {
         name: string;
         lumpSums: typeof LUMP_SUMS;
@@ -84,33 +95,23 @@ const runConfigs = (() => {
     );
 
     if (config.projectedLumpSums.includeAverage) {
-        const startDate = new Date(config.projectedLumpSums.averageStartDate);
         console.log(
-            `Calculating average lump sum after ${startDate.toLocaleDateString()}...`
+            `Calculating average lump sum after ${averageStartDate.toLocaleDateString()}...`
         );
-        if (isNaN(startDate.getTime()))
-            throw new Error(`Invalid date string: ${startDate}`);
-
         const lumpSumDatas = LUMP_SUMS.filter(
-            s => s.date.getTime() > startDate.getTime()
+            s => s.date.getTime() > averageStartDate.getTime()
         );
         for (const d of lumpSumDatas)
             console.log("-", d.date.toLocaleDateString(), d.dollars);
 
-        const monthCountInclusive = (() => {
-            const start = lumpSumDatas[0].date;
-            const end = lumpSumDatas[lumpSumDatas.length - 1].date;
-            const yearMonths = (end.getFullYear() - start.getFullYear()) * 12;
-            const monthMonths = end.getMonth() - start.getMonth();
-            return yearMonths + monthMonths + 1;
-        })();
+        if (lumpSumHistory.length === 0)
+            throw new Error("No lump sums after the average start date.");
         console.log(
-            `${monthCountInclusive} months, ${lumpSumDatas.length} lump sums.`
+            `${lumpSumHistory.length} months, ${lumpSumDatas.length} lump sums.`
         );
 
-        const lumpSums = lumpSumDatas.map(s => s.dollars);
-        const lumpSumsSum = lumpSums.reduce((acc, curr) => acc + curr, 0);
-        const avgLumpSum = Math.round(lumpSumsSum / monthCountInclusive);
+        const avgLumpSum =
+            lumpSumHistory[lumpSumHistory.length - 1].runningAverage;
         console.log(`Average lump sum: \$${avgLumpSum}`);
 
         result.push({
@@ -230,6 +231,8 @@ fs.promises
             config.target.principal,
             new Date(),
             config.output.folder,
+            lumpSumHistory,
+            averageStartDate,
             monthlyCashFlow,
             cumulativeCashFlow,
             config.cashFlow.yAxisMaximum,
@@ -245,6 +248,29 @@ fs.promises
             path.join(config.output.folder, "report.json"),
             JSON.stringify(table, null, 4)
         );
+        const lumpSumHistoryPromise = fs.promises
+            .mkdir(path.join(config.output.folder, "lump-sums"), {
+                recursive: true,
+            })
+            .then(() =>
+                fs.promises.writeFile(
+                    path.join(
+                        config.output.folder,
+                        "lump-sums/monthly-and-average.json"
+                    ),
+                    JSON.stringify(
+                        lumpSumHistory.map(entry => ({
+                            month: `${entry.month.getFullYear()}-${String(
+                                entry.month.getMonth() + 1
+                            ).padStart(2, "0")}`,
+                            monthlyTotal: entry.monthlyTotal,
+                            runningAverage: entry.runningAverage,
+                        })),
+                        null,
+                        4
+                    )
+                )
+            );
         const cashFlowPromise = fs.promises.writeFile(
             path.join(config.output.folder, "cash-flow/monthly-cash-allocation.json"),
             JSON.stringify(monthlyCashFlow, null, 4)
@@ -256,6 +282,7 @@ fs.promises
         return Promise.all([
             dataPromise,
             reportPromise,
+            lumpSumHistoryPromise,
             cashFlowPromise,
             cumulativeCashFlowPromise,
         ]);

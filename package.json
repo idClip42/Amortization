@@ -5,7 +5,8 @@
     "type": "module",
     "main": "index.ts",
     "scripts": {
-        "start": "npx tsc && node dist/index.js"
+        "start": "npx tsc && node dist/index.js",
+        "test": "npx tsc && node --test dist/src/lumpSumHistory.test.js"
     },
     "author": "",
     "license": "ISC",

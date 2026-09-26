@@ -10,6 +10,8 @@ import {
     type CashFlowLayerLabels,
 } from "./makeCashFlowChartSpec.js";
 import type { MonthlyCashFlow } from "./cashFlow.js";
+import type { MonthlyLumpSumHistory } from "./lumpSumHistory.js";
+import { makeLumpSumHistoryChartSpec } from "./makeLumpSumHistoryChartSpec.js";
 import type Config from "./../config.json";
 import { toSafeFilename } from "./utils.js";
 
@@ -49,6 +51,8 @@ export async function renderGraphs(
     targetPrincipal: number,
     inflationDate: Date,
     outputFolder: string,
+    lumpSumHistory: MonthlyLumpSumHistory[],
+    averageStartDate: Date,
     cashFlow: MonthlyCashFlow,
     cumulativeCashFlow: MonthlyCashFlow,
     cashFlowYAxisMaximum: number,
@@ -69,6 +73,15 @@ export async function renderGraphs(
             entry => entry.month.getTime() >= firstMortgagePayment.getTime()
         ),
     };
+
+    if (lumpSumHistory.length > 0) {
+        renderPromises.push(
+            renderSvg(
+                makeLumpSumHistoryChartSpec(lumpSumHistory, averageStartDate),
+                path.join(outputFolder, "lump-sums/monthly-and-average.svg")
+            )
+        );
+    }
 
     renderPromises.push(
         renderSvg(
