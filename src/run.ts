@@ -15,12 +15,6 @@ type DateRecord = {
     tag: "" | "payment" | "lumpSum" | "projectedLumpSum";
 };
 
-type LumpSumProjection = {
-    startDate: Date;
-    paymentDate: number;
-    dollars: number;
-};
-
 export function run(
     startDate: Date,
     initialPrincipal: number,
@@ -28,7 +22,7 @@ export function run(
     monthlyTowardLoanForDate: (date: Date) => number,
     monthlyPaymentDay: number,
     lumpSums: { date: Date; dollars: number }[],
-    lumpSumProjection: LumpSumProjection
+    projectedLumpSumForDate: (date: Date) => number
 ): DateRecord[] {
     const day: Date = startDate;
     const dailyInterest = interestRate / 365 / 100;
@@ -60,7 +54,10 @@ export function run(
         };
 
         if (day.getDate() === monthlyPaymentDay) {
-            const todaysPayment = monthlyTowardLoanForDate(day) - interestAcc;
+            const todaysPayment = Math.min(
+                remainingPrincipal,
+                monthlyTowardLoanForDate(day) - interestAcc
+            );
 
             paidPrincipalToday = todaysPayment;
             paidInterestToday = interestAcc;
@@ -92,33 +89,38 @@ export function run(
             const sameDay =
                 day.toLocaleDateString() === lumpSum.date.toLocaleDateString();
             if (!sameDay) continue;
-            remainingPrincipal -= lumpSum.dollars;
-            paidPrincipal += lumpSum.dollars;
-            paidPrincipalToday += lumpSum.dollars;
+            const applied = Math.min(Math.max(remainingPrincipal, 0), lumpSum.dollars);
+            if (applied <= 0) continue;
+            remainingPrincipal -= applied;
+            paidPrincipal += applied;
+            paidPrincipalToday += applied;
             paidPrincipalAdjusted += adjustForInflation({
                 input: {
                     ...inflInput,
-                    dollars: lumpSum.dollars,
+                    dollars: applied,
                 },
                 target: inflTarget,
             });
             tag = "lumpSum";
         }
 
-        if (day.getTime() > lumpSumProjection.startDate.getTime()) {
-            if (day.getDate() === lumpSumProjection.paymentDate) {
-                remainingPrincipal -= lumpSumProjection.dollars;
-                paidPrincipal += lumpSumProjection.dollars;
-                paidPrincipalToday += lumpSumProjection.dollars;
-                paidPrincipalAdjusted += adjustForInflation({
-                    input: {
-                        ...inflInput,
-                        dollars: lumpSumProjection.dollars,
-                    },
-                    target: inflTarget,
-                });
-                tag = "projectedLumpSum";
-            }
+        const projectedAmount = projectedLumpSumForDate(day);
+        if (!Number.isFinite(projectedAmount) || projectedAmount < 0) {
+            throw new Error(`Invalid projected lump sum on ${day.toLocaleDateString()}.`);
+        }
+        const projectedApplied = Math.min(Math.max(remainingPrincipal, 0), projectedAmount);
+        if (projectedApplied > 0) {
+            remainingPrincipal -= projectedApplied;
+            paidPrincipal += projectedApplied;
+            paidPrincipalToday += projectedApplied;
+            paidPrincipalAdjusted += adjustForInflation({
+                input: {
+                    ...inflInput,
+                    dollars: projectedApplied,
+                },
+                target: inflTarget,
+            });
+            tag = "projectedLumpSum";
         }
 
         records.push({

@@ -6,10 +6,15 @@ import { buildCumulativeCashFlow, buildMonthlyCashFlow } from "./src/cashFlow.js
 import { CashFlowLayerLabels } from "./src/makeCashFlowChartSpec.js";
 import { createLoanPaymentSchedule } from "./src/loanPaymentSchedule.js";
 import { buildMonthlyLumpSumHistory } from "./src/lumpSumHistory.js";
+import { buildCashFlowProjection } from "./src/cashFlowProjection.js";
 import fs from "fs";
 import path from "path";
 
-if (new Date(config.projectedLumpSums.startDate).getTime() < Date.now()) {
+const projectionStartDate = new Date(config.projectedLumpSums.startDate);
+if (Number.isNaN(projectionStartDate.getTime())) {
+    throw new Error(`Invalid projected lump sum start date: ${config.projectedLumpSums.startDate}`);
+}
+if (projectionStartDate.getTime() < Date.now()) {
     throw new Error(
         `Projected lump sum date ${config.projectedLumpSums.startDate} is before today.`
     );
@@ -71,18 +76,51 @@ const lumpSumHistory = buildMonthlyLumpSumHistory(
     averageStartDate
 );
 
+const cashFlowProjection = config.cashFlowProjection.enabled
+    ? buildCashFlowProjection({
+          startAfter: projectionStartDate,
+          paymentDay: config.projectedLumpSums.paymentDay,
+          months: config.cashFlowProjection.months,
+          creditCardAverageStartMonth:
+              config.cashFlowProjection.creditCardAverageStartMonth,
+          loanPaymentDay: config.loan.paymentDay,
+          loanPaymentChanges: config.loan.monthlyPaymentChanges,
+          income: config.cashFlow.income,
+          monthlyCreditCardPayments: config.cashFlow.monthlyCreditCardPayments,
+          recurringExpenses: config.cashFlow.recurringExpenses,
+          gasPayments: config.cashFlow.gasPayments,
+          electricPayments: config.cashFlow.electricPayments,
+      })
+    : null;
+const cashFlowAmountsByDate = new Map(
+    cashFlowProjection?.months.map(month => [month.date.getTime(), month.lumpSum]) ?? []
+);
+if (cashFlowProjection) {
+    console.log(
+        `Cash-flow forecast credit-card average: $${cashFlowProjection.creditCardAverage.toFixed(2)} ` +
+            `from ${cashFlowProjection.creditCardSampleMonths.length} months.`
+    );
+}
+
+const fixedProjectionForDate = (dollars: number) => (date: Date): number =>
+    date.getTime() > projectionStartDate.getTime() &&
+    date.getDate() === config.projectedLumpSums.paymentDay
+        ? dollars
+        : 0;
+
 const runConfigs = (() => {
     const result: {
         name: string;
         lumpSums: typeof LUMP_SUMS;
-        projectedLumpSumAmt: number;
+        projectedLumpSumForDate: (date: Date) => number;
+        forecastEndDate?: Date;
     }[] = [];
 
     if (config.graphs.includeRaw30Year) {
         result.push({
             name: "No Extra Payments",
             lumpSums: [],
-            projectedLumpSumAmt: 0,
+            projectedLumpSumForDate: fixedProjectionForDate(0),
         });
     }
 
@@ -90,7 +128,7 @@ const runConfigs = (() => {
         ...config.projectedLumpSums.options.map(pls => ({
             name: `\$${pls}/month`,
             lumpSums: LUMP_SUMS,
-            projectedLumpSumAmt: pls,
+            projectedLumpSumForDate: fixedProjectionForDate(pls),
         }))
     );
 
@@ -117,7 +155,18 @@ const runConfigs = (() => {
         result.push({
             name: `\$${avgLumpSum}/month (Avg.)`,
             lumpSums: LUMP_SUMS,
-            projectedLumpSumAmt: avgLumpSum,
+            projectedLumpSumForDate: fixedProjectionForDate(avgLumpSum),
+        });
+    }
+
+    if (cashFlowProjection) {
+        result.push({
+            name: "Cash Flow Forecast",
+            lumpSums: LUMP_SUMS,
+            projectedLumpSumForDate: date =>
+                cashFlowAmountsByDate.get(date.getTime()) ?? 0,
+            forecastEndDate:
+                cashFlowProjection.months[cashFlowProjection.months.length - 1].date,
         });
     }
 
@@ -139,17 +188,40 @@ const dataSets = runConfigs.map(cfg => {
         loanPaymentSchedule.monthlyTowardLoanForDate,
         config.loan.paymentDay,
         cfg.lumpSums,
-        {
-            startDate: new Date(config.projectedLumpSums.startDate),
-            paymentDate: config.projectedLumpSums.paymentDay,
-            dollars: cfg.projectedLumpSumAmt,
-        }
+        cfg.projectedLumpSumForDate
     );
+    if (
+        cfg.forecastEndDate &&
+        data[data.length - 1].day.getTime() > cfg.forecastEndDate.getTime()
+    ) {
+        throw new Error(
+            `Cash-flow forecast did not pay off the loan within ${config.cashFlowProjection.months} months.`
+        );
+    }
     return {
         name: cfg.name,
         data: data,
     };
 });
+const cashFlowProjectionOutput = (() => {
+    if (!cashFlowProjection) return null;
+    const cashFlowData = dataSets.find(ds => ds.name === "Cash Flow Forecast");
+    if (!cashFlowData) throw new Error("Cash-flow forecast data is missing.");
+    const cashFlowAppliedByDate = new Map(
+        cashFlowData.data
+            .filter(record => record.tag === "projectedLumpSum")
+            .map(record => [record.day.getTime(), record.paidPrincipalToday])
+    );
+    return {
+        ...cashFlowProjection,
+        months: cashFlowProjection.months.map(month => ({
+            ...month,
+            appliedToLoan: Math.round(
+                (cashFlowAppliedByDate.get(month.date.getTime()) ?? 0) * 100
+            ) / 100,
+        })),
+    };
+})();
 
 const graphEndDate: Date | null = (() => {
     if (!config.graphs.optionalEndDate) return null;
@@ -279,11 +351,18 @@ fs.promises
             path.join(config.output.folder, "cash-flow/cumulative-cash-allocation.json"),
             JSON.stringify(cumulativeCashFlow, null, 4)
         );
+        const cashFlowProjectionPromise = cashFlowProjectionOutput
+            ? fs.promises.writeFile(
+                  path.join(config.output.folder, "cash-flow/projected-lump-sums.json"),
+                  JSON.stringify(cashFlowProjectionOutput, null, 4)
+              )
+            : Promise.resolve();
         return Promise.all([
             dataPromise,
             reportPromise,
             lumpSumHistoryPromise,
             cashFlowPromise,
             cumulativeCashFlowPromise,
+            cashFlowProjectionPromise,
         ]);
     });

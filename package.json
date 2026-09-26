@@ -6,7 +6,7 @@
     "main": "index.ts",
     "scripts": {
         "start": "npx tsc && node dist/index.js",
-        "test": "npx tsc && node --test dist/src/lumpSumHistory.test.js"
+        "test": "npx tsc && node --test dist/src/lumpSumHistory.test.js dist/src/cashFlowProjection.test.js dist/src/run.test.js"
     },
     "author": "",
     "license": "ISC",

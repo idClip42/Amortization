@@ -42,6 +42,11 @@
         "includeAverage": true,
         "averageStartDate": "November 1, 2025"
     },
+    "cashFlowProjection": {
+        "enabled": true,
+        "creditCardAverageStartMonth": "2026-01",
+        "months": 24
+    },
     "cashFlow": {
         "yAxisMaximum": 11000,
         "cumulativeStartMonth": "2025-11",
