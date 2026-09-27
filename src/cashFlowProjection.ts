@@ -17,6 +17,7 @@ export type CashFlowProjectionInput = {
     startAfter: Date;
     paymentDay: number;
     months: number;
+    incomeLookaheadDays: number;
     creditCardAverageStartMonth: string;
     loanPaymentDay: number;
     loanPaymentChanges: readonly LoanPaymentChange[];
@@ -41,6 +42,7 @@ export type ProjectedCashFlowMonth = {
 export type CashFlowProjection = {
     creditCardAverage: number;
     creditCardSampleMonths: string[];
+    incomeLookaheadDays: number;
     months: ProjectedCashFlowMonth[];
 };
 
@@ -79,6 +81,10 @@ function cents(amount: number, context: string): number {
 
 function dollars(amountInCents: number): number {
     return amountInCents / 100;
+}
+
+function addDays(date: Date, days: number): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 }
 
 function dateInMonth(month: Date, day: number): Date {
@@ -142,7 +148,9 @@ function recurringAmountForMonth(
 /**
  * Forecasts cash left for an extra mortgage payment on each 10th. Monthly bills
  * are assigned to that month's payment date; actual and forecast paychecks keep
- * their biweekly dates. A negative carry is repaid before another lump sum.
+ * their biweekly dates. Income lookahead assigns nearby future paychecks to the
+ * prior payment, with consecutive windows so no paycheck is counted twice.
+ * A negative carry is repaid before another lump sum.
  */
 export function buildCashFlowProjection(input: CashFlowProjectionInput): CashFlowProjection {
     if (Number.isNaN(input.startAfter.getTime())) {
@@ -150,6 +158,9 @@ export function buildCashFlowProjection(input: CashFlowProjectionInput): CashFlo
     }
     if (!Number.isInteger(input.months) || input.months < 1) {
         throw new Error("Cash-flow projection months must be a positive integer.");
+    }
+    if (!Number.isInteger(input.incomeLookaheadDays) || input.incomeLookaheadDays < 0) {
+        throw new Error("Cash-flow projection incomeLookaheadDays must be a non-negative integer.");
     }
     if (!Number.isInteger(input.paymentDay) || input.paymentDay < 1 || input.paymentDay > 28) {
         throw new Error("Cash-flow projection paymentDay must be between 1 and 28.");
@@ -216,6 +227,7 @@ export function buildCashFlowProjection(input: CashFlowProjectionInput): CashFlo
         firstPaymentDate.getMonth() + input.months - 1,
         input.paymentDay
     );
+    const lastIncomeCutoff = addDays(lastPaymentDate, input.incomeLookaheadDays);
     const paychecks = [...actualIncome];
     // An early holiday deposit still belongs to its scheduled Friday.
     const nominalLastFriday = new Date(lastActualPaycheck.date);
@@ -228,7 +240,7 @@ export function buildCashFlowProjection(input: CashFlowProjectionInput): CashFlo
             nominalLastFriday.getMonth(),
             nominalLastFriday.getDate() + 14
         );
-        payday.getTime() <= lastPaymentDate.getTime();
+        payday.getTime() <= lastIncomeCutoff.getTime();
         payday = new Date(
             payday.getFullYear(),
             payday.getMonth(),
@@ -241,10 +253,13 @@ export function buildCashFlowProjection(input: CashFlowProjectionInput): CashFlo
     const loanSchedule = createLoanPaymentSchedule(input.loanPaymentChanges);
     const months: ProjectedCashFlowMonth[] = [];
     let carryCents = 0;
-    let previousPaymentDate = new Date(
-        firstPaymentDate.getFullYear(),
-        firstPaymentDate.getMonth() - 1,
-        input.paymentDay
+    let previousIncomeCutoff = addDays(
+        new Date(
+            firstPaymentDate.getFullYear(),
+            firstPaymentDate.getMonth() - 1,
+            input.paymentDay
+        ),
+        input.incomeLookaheadDays
     );
     for (let index = 0; index < input.months; index += 1) {
         const date = new Date(
@@ -252,10 +267,11 @@ export function buildCashFlowProjection(input: CashFlowProjectionInput): CashFlo
             firstPaymentDate.getMonth() + index,
             input.paymentDay
         );
+        const incomeCutoff = addDays(date, input.incomeLookaheadDays);
         const cyclePaychecks = paychecks.filter(
             paycheck =>
-                paycheck.date.getTime() > previousPaymentDate.getTime() &&
-                paycheck.date.getTime() <= date.getTime()
+                paycheck.date.getTime() > previousIncomeCutoff.getTime() &&
+                paycheck.date.getTime() <= incomeCutoff.getTime()
         );
         const incomeCents = cyclePaychecks.reduce((sum, paycheck) => sum + paycheck.amount, 0);
         const month = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -298,12 +314,13 @@ export function buildCashFlowProjection(input: CashFlowProjectionInput): CashFlo
             lumpSum: dollars(lumpSumCents),
             carryOut: dollars(carryCents),
         });
-        previousPaymentDate = date;
+        previousIncomeCutoff = incomeCutoff;
     }
 
     return {
         creditCardAverage: dollars(creditCardAverageCents),
         creditCardSampleMonths,
+        incomeLookaheadDays: input.incomeLookaheadDays,
         months,
     };
 }

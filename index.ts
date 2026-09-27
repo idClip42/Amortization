@@ -81,6 +81,7 @@ const cashFlowProjection = config.cashFlowProjection.enabled
           startAfter: projectionStartDate,
           paymentDay: config.projectedLumpSums.paymentDay,
           months: config.cashFlowProjection.months,
+          incomeLookaheadDays: config.cashFlowProjection.incomeLookaheadDays,
           creditCardAverageStartMonth:
               config.cashFlowProjection.creditCardAverageStartMonth,
           loanPaymentDay: config.loan.paymentDay,

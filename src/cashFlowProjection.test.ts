@@ -16,6 +16,7 @@ test("carries a shortfall forward and includes three-paycheck cycles", () => {
         startAfter: new Date(2026, 2, 9),
         paymentDay: 10,
         months: 2,
+        incomeLookaheadDays: 0,
         creditCardAverageStartMonth: "2026-01",
         loanPaymentDay: 1,
         loanPaymentChanges: [
@@ -72,6 +73,7 @@ test("uses the latest reading for each calendar month in both forecast years", (
         startAfter: new Date(2027, 7, 9),
         paymentDay: 10,
         months: 13,
+        incomeLookaheadDays: 0,
         creditCardAverageStartMonth: "2026-01",
         loanPaymentDay: 1,
         loanPaymentChanges: [
@@ -94,4 +96,35 @@ test("uses the latest reading for each calendar month in both forecast years", (
     assert.equal(gas(0), 30);
     assert.equal(gas(1), 10);
     assert.equal(gas(12), 30);
+});
+
+test("income lookahead moves nearby paychecks to the prior lump sum only once", () => {
+    const input: CashFlowProjectionInput = {
+        startAfter: new Date(2026, 9, 9),
+        paymentDay: 10,
+        months: 6,
+        incomeLookaheadDays: 0,
+        creditCardAverageStartMonth: "2026-01",
+        loanPaymentDay: 1,
+        loanPaymentChanges: [
+            { startDate: "2025-01-01", monthlyPayment: 100, monthlyEscrow: 0 },
+        ],
+        income: [{ date: "2026-09-11", amount: 1000 }],
+        monthlyCreditCardPayments: [{ month: "2026-01", amount: 100 }],
+        recurringExpenses: [],
+        gasPayments: utilityYear(10),
+        electricPayments: utilityYear(20),
+    };
+
+    const standard = buildCashFlowProjection(input);
+    const lookahead = buildCashFlowProjection({ ...input, incomeLookaheadDays: 2 });
+
+    assert.equal(standard.months[0].paycheckCount, 3);
+    assert.equal(lookahead.months[0].paycheckCount, 2);
+    assert.equal(lookahead.months[0].lumpSum, 1770);
+    assert.equal(lookahead.months[1].paycheckCount, 2);
+    assert.equal(standard.months[4].paycheckCount, 2);
+    assert.equal(lookahead.months[4].paycheckCount, 3);
+    assert.equal(lookahead.months[5].paycheckCount, 2);
+    assert.equal(lookahead.incomeLookaheadDays, 2);
 });

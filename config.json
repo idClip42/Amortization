@@ -45,6 +45,7 @@
     "cashFlowProjection": {
         "enabled": true,
         "creditCardAverageStartMonth": "2026-01",
+        "incomeLookaheadDays": 2,
         "months": 24
     },
     "cashFlow": {
