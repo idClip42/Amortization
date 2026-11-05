@@ -7,6 +7,7 @@ import { CashFlowLayerLabels } from "./src/makeCashFlowChartSpec.js";
 import { createLoanPaymentSchedule } from "./src/loanPaymentSchedule.js";
 import { buildMonthlyLumpSumHistory } from "./src/lumpSumHistory.js";
 import { buildCashFlowProjection } from "./src/cashFlowProjection.js";
+import { findPrincipalTarget, type SeriesPrincipalTarget } from "./src/principalTarget.js";
 import fs from "fs";
 import path from "path";
 
@@ -231,11 +232,15 @@ const graphEndDate: Date | null = (() => {
     return end;
 })();
 
+// Compute milestones before chart filtering so the countdown survives a date cutoff.
+const principalTargets: SeriesPrincipalTarget[] = dataSets.flatMap(ds => {
+    const target = findPrincipalTarget(ds.data, config.target.principal);
+    return target ? [{ ...target, series: ds.name }] : [];
+});
+
 const table = dataSets.map(ds => {
     const last = ds.data[ds.data.length - 1];
-    const target = ds.data.find(
-        d => d.remainingPrincipal < config.target.principal
-    );
+    const target = principalTargets.find(target => target.series === ds.name);
     if (!target) throw new Error("Could not find target date.");
     const cutoff = (() => {
         if (!graphEndDate) return null;
@@ -250,7 +255,7 @@ const table = dataSets.map(ds => {
     return {
         Name: ds.name,
         "End Date": last.day.toLocaleDateString(),
-        [`\$${config.target.principal} Date`]: target?.day.toLocaleDateString(),
+        [`\$${config.target.principal} Date`]: target.date.toLocaleDateString(),
         "Interest Paid ($)": interestPaid,
         ...(graphEndDate && {
             [`Interest Paid by ${graphEndDate?.toLocaleDateString()} (\$)`]:
@@ -309,7 +314,8 @@ fs.promises
             monthlyCashFlow,
             cumulativeCashFlow,
             config.cashFlow.yAxisMaximum,
-            config.cashFlow.layerLabels as CashFlowLayerLabels
+            config.cashFlow.layerLabels as CashFlowLayerLabels,
+            principalTargets
         )
     )
     .then(() => {

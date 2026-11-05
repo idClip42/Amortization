@@ -14,6 +14,7 @@ import type { MonthlyLumpSumHistory } from "./lumpSumHistory.js";
 import { makeLumpSumHistoryChartSpec } from "./makeLumpSumHistoryChartSpec.js";
 import type Config from "./../config.json";
 import { toSafeFilename } from "./utils.js";
+import { formatMonthsRemaining, type SeriesPrincipalTarget } from "./principalTarget.js";
 
 async function renderSvg(
     spec: Parameters<typeof compile>[0],
@@ -56,7 +57,8 @@ export async function renderGraphs(
     cashFlow: MonthlyCashFlow,
     cumulativeCashFlow: MonthlyCashFlow,
     cashFlowYAxisMaximum: number,
-    cashFlowLayerLabels: CashFlowLayerLabels
+    cashFlowLayerLabels: CashFlowLayerLabels,
+    principalTargets: SeriesPrincipalTarget[]
 ): Promise<void> {
     const renderPromises: Promise<void>[] = [];
     const datasetNames = [...new Set(data.map(d => d.name))];
@@ -102,21 +104,43 @@ export async function renderGraphs(
 
     // REMAINING PRINCIPAL
 
+    const asOf = new Date();
+    const remainingPrincipalSeries = quickSeriesUtil(data, "remainingPrincipal");
+    const cashFlowTarget = principalTargets.find(target => target.series === "Cash Flow Forecast");
+    const targetLabel = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        notation: "compact",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    }).format(targetPrincipal).replace("K", "k");
+    const targetReached = cashFlowTarget && cashFlowTarget.date.getTime() <= asOf.getTime();
     const principalRemainingSpec = makeLineChartSpec({
         title: "Principal Remaining Over Time (nominal dollars)",
-        series: quickSeriesUtil(data, "remainingPrincipal"),
+        series: remainingPrincipalSeries,
         yTitle: "Remaining Principal ($)",
         horizRule: targetPrincipal,
+        callout: cashFlowTarget ? {
+            series: cashFlowTarget.series,
+            headline: formatMonthsRemaining(cashFlowTarget.date, asOf),
+            detail: `${targetReached ? "Reached" : "Projected to reach"} ${targetLabel} · ${cashFlowTarget.date.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`,
+        } : undefined,
         pointLabels: [
             {
-                x: new Date(),
+                x: asOf,
                 labelExpression: "'$' + round(datum.y)",
             },
-            {
-                y: 20000,
-                // labelExpression: "timeFormat(datum.x, '%b %d, %Y')",
+            ...principalTargets.filter(target => {
+                const points = remainingPrincipalSeries.find(series => series.name === target.series)?.data;
+                // An off-chart milestone must not extend the displayed date range.
+                return points && points.length > 0 &&
+                    target.date >= points[0].x && target.date <= points[points.length - 1].x;
+            }).map(target => ({
+                series: target.series,
+                x: target.date,
+                y: target.remainingPrincipal,
                 labelExpression: "timeFormat(datum.x, '%b %Y')",
-            },
+            })),
         ],
     });
     renderPromises.push(

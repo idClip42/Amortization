@@ -3,6 +3,8 @@ import CONFIG from "./../config.json" with { type: "json" };
 
 const width = 800;
 const height = 400;
+const CALLOUT_HEADLINE_FONT_SIZE = 15;
+const AXIS_LABEL_FONT_SIZE = 10;
 const INTERPOLATE: "monotone" | "linear" = "linear";
 
 type XYPoint = {
@@ -24,9 +26,16 @@ type Input = {
     /** Fill between stacked series (area chart style) */
     stackedFill?: boolean;
     pointLabels?: PointLabel[];
+    callout?: {
+        series: string | number;
+        headline: string;
+        detail: string;
+    };
 };
 
 type PointLabel = {
+    /** Omit to annotate every series. */
+    series?: string | number;
     x?: Date;
     y?: number;
     labelExpression: string;
@@ -78,6 +87,7 @@ export function makeLineChartSpec({
     horizRule,
     stackedFill = false,
     pointLabels = [],
+    callout,
 }: Input): Parameters<typeof compile>[0] {
     const values = flattenSeries(series);
 
@@ -147,6 +157,7 @@ export function makeLineChartSpec({
         title,
         width,
         height,
+        config: { axis: { labelFontSize: AXIS_LABEL_FONT_SIZE } },
 
         data: { values },
 
@@ -194,26 +205,28 @@ export function makeLineChartSpec({
                 },
             },
             ...series.flatMap(s => {
-                const pointLabelData = pointLabels.map(pl => {
-                    if (pl.x === undefined && pl.y === undefined)
-                        throw new Error("Undefined x and y");
+                const pointLabelData = pointLabels
+                    .filter(pl => pl.series === undefined || pl.series === s.name)
+                    .map(pl => {
+                        if (pl.x === undefined && pl.y === undefined)
+                            throw new Error("Undefined x and y");
 
-                    const x =
-                        pl.x !== undefined
-                            ? pl.x
-                            : findClosestXPoint(pl.y!, s.data).x;
-                    const y =
-                        pl.y !== undefined
-                            ? pl.y
-                            : findClosestYPoint(pl.x!, s.data).y;
+                        const x =
+                            pl.x !== undefined
+                                ? pl.x
+                                : findClosestXPoint(pl.y!, s.data).x;
+                        const y =
+                            pl.y !== undefined
+                                ? pl.y
+                                : findClosestYPoint(pl.x!, s.data).y;
 
-                    return {
-                        x: x,
-                        y: y,
-                        series: s.name,
-                        labelExpression: pl.labelExpression,
-                    };
-                });
+                        return {
+                            x: x,
+                            y: y,
+                            series: s.name,
+                            labelExpression: pl.labelExpression,
+                        };
+                    });
 
                 return [
                     {
@@ -265,6 +278,39 @@ export function makeLineChartSpec({
                     })),
                 ];
             }),
+            ...(callout ? [
+                {
+                    data: { values: [{ series: callout.series, text: callout.headline }] },
+                    mark: {
+                        type: "text" as const,
+                        align: "right" as const,
+                        baseline: "top" as const,
+                        fontSize: CALLOUT_HEADLINE_FONT_SIZE,
+                        fontWeight: "bold" as const,
+                    },
+                    encoding: {
+                        x: { value: width - 20 },
+                        y: { value: 20 },
+                        text: { field: "text" },
+                        color: { field: "series", type: "nominal" as const },
+                    },
+                },
+                ...[callout.detail, String(callout.series)].map((text, index) => ({
+                    data: { values: [{ text }] },
+                    mark: {
+                        type: "text" as const,
+                        align: "right" as const,
+                        baseline: "top" as const,
+                        fontSize: AXIS_LABEL_FONT_SIZE,
+                        color: "#666",
+                    },
+                    encoding: {
+                        x: { value: width - 20 },
+                        y: { value: 38 + index * 12 },
+                        text: { field: "text" },
+                    },
+                })),
+            ] : []),
         ],
     };
 }
